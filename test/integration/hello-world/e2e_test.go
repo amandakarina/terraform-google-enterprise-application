@@ -60,7 +60,7 @@ func TestHelloWorldE2E(t *testing.T) {
 			i := 0
 			for i = 0; i < 40; i++ {
 				if strings.Contains(logs, "Hello world!") {
-					break
+					return
 				} else if strings.Contains(logs, "container creating") {
 					time.Sleep(2 * time.Second)
 					t.Log("Container initializing, sleeping for 2 minutes.")
