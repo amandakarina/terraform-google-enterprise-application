@@ -39,7 +39,7 @@ An overview of the application factory pipeline is shown below.
 
 ![Enterprise Application application factory diagram](../assets/eab-app-factory.svg)
 
-The application factory creates the following resources as defined in the [`app-group-baseline`](./modules/app-group-baseline/) submodule:
+The application factory creates the following resources as defined in the [`secure-cicd-pipeline`](./modules/secure-cicd-pipeline/) submodule:
 
 - __Application Admin Project (Optional):__ A new Google Cloud project to host the application's CI/CD pipelines and related resources. This project is created if `create_admin_project` is set to `true`.
 - __Application Infrastructure Projects (Optional):__ Environment-specific Google Cloud projects to host the application's infrastructure resources (e.g., GKE clusters, databases). These projects are created if `create_infra_project` is set to `true`.
@@ -174,12 +174,12 @@ A previously created **private** GitLab repository for each one of the repositor
 
 If you are not using Worker Pools you can skip this step. If you are using Worker Pools, an additional step must be taken before deploying.
 
-There is a terraform script that will assign required permissions on the Worker Pool Host Project and requires `var.workerpool_id` to be specified on the 4-appfactory `terraform.tfvars` file. The script is located at [./modules/app-group-baseline/additional_workerpool_permissions.tf.example](./modules/app-group-baseline/additional_workerpool_permissions.tf.example).
+There is a terraform script that will assign required permissions on the Worker Pool Host Project and requires `var.workerpool_id` to be specified on the 4-appfactory `terraform.tfvars` file. The script is located at [./modules/secure-cicd-pipeline/additional_workerpool_permissions.tf.example](./modules/secure-cicd-pipeline/additional_workerpool_permissions.tf.example).
 
-1. Enable the permission assignment terraform script on `app-group-baseline` module.
+1. Enable the permission assignment terraform script on `secure-cicd-pipeline` module.
 
     ```bash
-    mv ./modules/app-group-baseline/additional_workerpool_permissions.tf.example ./modules/app-group-baseline/additional_workerpool_permissions.tf
+    mv ./modules/secure-cicd-pipeline/additional_workerpool_permissions.tf.example ./modules/secure-cicd-pipeline/additional_workerpool_permissions.tf
     ```
 
 After renaming the file to `additional_workerpool_permissions.tf`, when you run the pipeline, the required permissions will automatically be assigned on the Worker Pool Host Project.
