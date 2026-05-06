@@ -39,6 +39,16 @@ func CopyFile(src string, dest string) error {
 	return os.WriteFile(dest, buf, s.Mode())
 }
 
+// DeleteFile deletes a single file from the src path to the dest path
+func DeleteFile(src string) error {
+	_, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+	err = os.Remove(src)
+	return err
+}
+
 // CopyDirectory copies a directory and the files and directories under it.
 func CopyDirectory(src string, dest string) error {
 	err := os.MkdirAll(dest, 0755)

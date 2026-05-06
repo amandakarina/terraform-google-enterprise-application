@@ -483,6 +483,10 @@ func copyStepCode(t testing.TB, conf utils.GitRepo, EABPath, checkoutPath, repo,
 	if err != nil {
 		return err
 	}
+	err = utils.DeleteFile(filepath.Join(targetDir, "modules"))
+	if err != nil {
+		return err
+	}
 	err = utils.CopyFile(filepath.Join(EABPath, "build/cloudbuild-tf-apply.yaml"), filepath.Join(gcpPath, "cloudbuild-tf-apply.yaml"))
 	if err != nil {
 		return err
@@ -492,7 +496,7 @@ func copyStepCode(t testing.TB, conf utils.GitRepo, EABPath, checkoutPath, repo,
 		return err
 	}
 
-	err = utils.CopyDirectory(filepath.Join(EABPath, "modules"), targetDir)
+	err = utils.CopyDirectory(filepath.Join(EABPath, "modules"), filepath.Join(targetDir, "modules"))
 	if err != nil {
 		return err
 	}

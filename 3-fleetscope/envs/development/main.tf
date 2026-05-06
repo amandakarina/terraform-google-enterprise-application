@@ -19,7 +19,7 @@ locals {
 }
 
 module "env" {
-  source = "../../../modules/fleetscope"
+  source = "../../modules/fleetscope"
 
   env                      = local.env
   cluster_project_id       = local.cluster_project_id
