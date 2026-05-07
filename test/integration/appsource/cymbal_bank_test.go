@@ -248,7 +248,7 @@ func TestSourceCymbalBank(t *testing.T) {
 							return false, nil
 						case "FAILURE":
 							logsCmd := fmt.Sprintf("builds log %s --project=%s --region=%s", build[0].Get("id").String(), build[0].Get("projectId").String(), region)
-							logs := gcloud.Runf(t, logsCmd).String()
+							logs := gcloud.RunCmd(t, logsCmd)
 							t.Logf("%s ci-build-log: %s", servicesInfoMap[serviceName].ServiceName, logs)
 							return false, errors.New("Build failed.")
 						}

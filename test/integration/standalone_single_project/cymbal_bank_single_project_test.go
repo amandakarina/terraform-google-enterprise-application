@@ -256,7 +256,7 @@ func TestSingleProjectSourceCymbalBank(t *testing.T) {
 							return false, nil
 						case "FAILURE":
 							logsCmd := fmt.Sprintf("builds log %s --project=%s --region=%s", build[0].Get("id").String(), build[0].Get("projectId").String(), region)
-							logs := gcloud.Runf(t, logsCmd).String()
+							logs := gcloud.RunCmd(t, logsCmd)
 							t.Logf("%s ci-build-log: %s", servicesInfoMap[serviceName].ServiceName, logs)
 							return false, fmt.Errorf("Build failed %s. \n", build[0].Get("buildTriggerId"))
 						}
@@ -298,7 +298,7 @@ func TestSingleProjectSourceCymbalBank(t *testing.T) {
 							return true, nil
 						} else {
 							logsCmd := fmt.Sprintf("builds log %s --project=%s --region=%s", rollouts[0].Get("deployingBuild").String(), projectID, region)
-							logs := gcloud.Runf(t, logsCmd).String()
+							logs := gcloud.RunCmd(t, logsCmd)
 							t.Logf("%s build-log: %s", serviceName, logs)
 							return false, fmt.Errorf("Rollout %s.", latestRolloutState)
 						}
