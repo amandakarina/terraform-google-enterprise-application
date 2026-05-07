@@ -207,7 +207,7 @@ func TestSourceLLMModel(t *testing.T) {
 						if strings.Contains(logs, "Insufficient memory") || strings.Contains(logs, "Insufficient CPU") || strings.Contains(logs, "didn't match Pod's node affinity/selector") {
 							t.Logf("Re-trying rollout due to Cluster scalling.")
 							rolloutFullName := strings.Split(rollouts[0].Get("name").String(), "/")
-							rolloutName := rolloutFullName[len(rolloutFullName)]
+							rolloutName := rolloutFullName[len(rolloutFullName)-1]
 							gcloud.Run(t, fmt.Sprintf("deploy rollouts retry-job %s --project=%s --delivery-pipeline=%s --region=%s --release=%s --phase-id=stable", rolloutName, projectID, serviceName, region, releaseName))
 							return true, nil
 						}
