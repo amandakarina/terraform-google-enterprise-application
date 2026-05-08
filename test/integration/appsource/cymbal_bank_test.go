@@ -296,7 +296,9 @@ func TestSourceCymbalBank(t *testing.T) {
 								t.Logf("Re-trying rollout due to Cluster scalling.")
 								rolloutFullName := strings.Split(rollouts[0].Get("name").String(), "/")
 								rolloutName := rolloutFullName[len(rolloutFullName)-1]
-								gcloud.Run(t, fmt.Sprintf("deploy rollouts retry-job %s --project=%s --delivery-pipeline=%s --region=%s --release=%s --phase-id=stable --job-id=deploy", rolloutName, projectID, serviceName, region, releaseName))
+								releaseNameParts := strings.Split(releaseName, "/")
+								releaseNameFinal := releaseNameParts[len(releaseNameParts)-1]
+								gcloud.Run(t, fmt.Sprintf("deploy rollouts retry-job %s --project=%s --delivery-pipeline=%s --region=%s --release=%s --phase-id=stable --job-id=deploy", rolloutName, projectID, serviceName, region, releaseNameFinal))
 								return true, nil
 							}
 							return false, fmt.Errorf("Rollout %s.", latestRolloutState)
