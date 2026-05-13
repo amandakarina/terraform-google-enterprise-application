@@ -69,7 +69,7 @@ func TestAppInfra(t *testing.T) {
 		splitServiceName  []string
 	)
 	servicesInfoMap := make(map[string]ServiceInfos)
-	region := "us-central1" // TODO: Move to terraform.tfvars?
+	region := "us-east1" // TODO: Move to terraform.tfvars?
 	bktPrefix := "bkt"
 
 	for appName, serviceNames := range testutils.ServicesNames {

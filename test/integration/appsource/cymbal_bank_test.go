@@ -69,7 +69,7 @@ func TestSourceCymbalBank(t *testing.T) {
 		suffixServiceName string
 		splitServiceName  []string
 	)
-	region := "us-central1" // TODO: Plumb output from appInfra
+	region := "us-east1" // TODO: Plumb output from appInfra
 	servicesInfoMap := make(map[string]ServiceInfos)
 
 	for _, serviceName := range testutils.ServicesNames[appName] {

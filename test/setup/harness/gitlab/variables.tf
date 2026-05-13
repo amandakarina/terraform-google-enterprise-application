@@ -27,7 +27,7 @@ variable "cloud_build_sa" {
 variable "region" {
   description = "Region where KMS and Logging bucket will be deployed."
   type        = string
-  default     = "us-central1"
+  default     = "us-east1"
 }
 
 variable "network_name" {

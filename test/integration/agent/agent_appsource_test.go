@@ -59,7 +59,7 @@ func TestSourceAgent(t *testing.T) {
 		clusterProjectID[envName] = multitenant.GetStringOutput("cluster_project_id")
 	}
 
-	region := "us-central1" // TODO: Plumb output from appInfra
+	region := "us-east1" // TODO: Plumb output from appInfra
 	appName := "agent"
 	serviceName := "capital-agent"
 	appSourcePath := fmt.Sprintf("../../../examples/%s/6-appsource/", appName)

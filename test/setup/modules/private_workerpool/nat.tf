@@ -76,14 +76,14 @@ resource "google_compute_address" "cloud_build_nat" {
   address_type = "EXTERNAL"
   name         = "cloud-build-nat"
   network_tier = "PREMIUM"
-  region       = "us-central1"
+  region       = "us-east1"
 }
 
 resource "google_compute_instance" "vm-proxy" {
   project      = module.private_workerpool_project.project_id
   name         = "cloud-build-nat-vm"
   machine_type = "e2-medium"
-  zone         = "us-central1-a"
+  zone         = "us-east1-b"
 
   tags = ["direct-gateway-access", "nat-gateway"]
 

@@ -23,7 +23,7 @@ locals {
 
 resource "google_artifact_registry_repository" "attestation_image" {
   project       = var.seed_project_id
-  location      = "us-central1"
+  location      = "us-east1"
   repository_id = "binauthz-attestation"
   description   = "Binary Attestation Docker repository"
   format        = "DOCKER"

@@ -121,7 +121,7 @@ resource "google_compute_instance" "default" {
   name         = "gitlab"
   project      = var.project_id
   machine_type = "n2-standard-4"
-  zone         = "us-central1-a"
+  zone         = "us-east1-b"
 
   tags = ["git-vm", "direct-gateway-access"]
 
@@ -154,7 +154,7 @@ resource "google_compute_subnetwork" "gitlab_subnet" {
   name          = "gitlab-vm-subnet"
   ip_cidr_range = "10.2.2.0/24"
 
-  region  = "us-central1"
+  region  = "us-east1"
   network = var.network_id
 }
 
@@ -240,7 +240,7 @@ module "ssl_cert" {
 
   name              = "${var.project_id}-ssl-cert"
   project_id        = var.project_id
-  location          = "us-central1"
+  location          = "us-east1"
   log_bucket        = var.logging_bucket_name
   log_object_prefix = "ssl-cert"
   force_destroy     = true
@@ -267,7 +267,7 @@ resource "google_storage_bucket_iam_member" "ssl_storage_admin" {
 resource "google_service_directory_namespace" "gitlab" {
   provider     = google-beta
   namespace_id = "gitlab-namespace"
-  location     = "us-central1"
+  location     = "us-east1"
   project      = var.project_id
 }
 

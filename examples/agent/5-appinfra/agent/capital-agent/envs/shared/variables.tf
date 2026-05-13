@@ -17,7 +17,7 @@
 variable "region" {
   description = "CI/CD region"
   type        = string
-  default     = "us-central1"
+  default     = "us-east1"
 }
 
 variable "buckets_force_destroy" {

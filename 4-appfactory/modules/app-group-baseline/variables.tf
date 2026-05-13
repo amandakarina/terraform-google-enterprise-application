@@ -95,7 +95,7 @@ variable "bucket_force_destroy" {
 variable "location" {
   description = "Location for build buckets."
   type        = string
-  default     = "us-central1"
+  default     = "us-east1"
 }
 
 variable "trigger_location" {

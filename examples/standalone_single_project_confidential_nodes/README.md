@@ -119,7 +119,7 @@ the steps below assume that you are checked out on the same level as `terraform-
 | bucket\_kms\_key | KMS Key id to be used to encrypt bucket. | `string` | `null` | no |
 | logging\_bucket | Bucket to store logging. | `string` | `null` | no |
 | project\_id | Google Cloud project ID in which to deploy all example resources | `string` | n/a | yes |
-| region | Google Cloud region for deployments | `string` | `"us-central1"` | no |
+| region | Google Cloud region for deployments | `string` | `"us-east1"` | no |
 | service\_perimeter\_mode | (VPC-SC) Service perimeter mode: ENFORCE, DRY\_RUN. | `string` | `"ENFORCE"` | no |
 | service\_perimeter\_name | (VPC-SC) Service perimeter name. The created projects in this step will be assigned to this perimeter. | `string` | `null` | no |
 | subnetwork\_self\_link | Sub-Network self-link | `string` | n/a | yes |

@@ -16,13 +16,13 @@ module "quota" {
       service         = "compute.googleapis.com"
       quota_id        = "PREEMPTIBLE-CPUS-per-project-region"
       preferred_value = 10000
-      region          = "us-central1"
+      region          = "us-east1"
     },
     {
       service         = "compute.googleapis.com"
       quota_id        = "DISKS-TOTAL-GB-per-project-region"
       preferred_value = 65000
-      region          = "us-central1"
+      region          = "us-east1"
     },
     {
       service         = "monitoring.googleapis.com"
@@ -45,7 +45,7 @@ module "quota" {
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|----------|
 | project_id | The GCP project where the resources will be created | `string` | n/a | yes |
-| region | The default region to host resources in | `string` | `"us-central1"` | no |
+| region | The default region to host resources in | `string` | `"us-east1"` | no |
 | quota_contact_email | Contact email for quota requests | `string` | `""` | no |
 | quota_preferences | List of quota preferences to request | `list(object)` | `[]` | no |
 

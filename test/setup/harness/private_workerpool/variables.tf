@@ -37,7 +37,7 @@ variable "billing_account" {
 variable "workpool_region" {
   description = "The region to deploy in"
   type        = string
-  default     = "us-central1"
+  default     = "us-east1"
 }
 
 variable "workerpool_machine_type" {

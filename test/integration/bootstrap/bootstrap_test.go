@@ -33,7 +33,7 @@ import (
 
 func TestBootstrap(t *testing.T) {
 
-	triggerRegion := "us-central1"
+	triggerRegion := "us-east1"
 
 	vpcsc := tft.NewTFBlueprintTest(t,
 		tft.WithTFDir("../../setup/vpcsc"),

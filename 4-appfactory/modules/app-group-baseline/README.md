@@ -20,7 +20,7 @@
 | gar\_repository\_name | Artifact Registry repository name where the Docker image for the infrastructure pipeline is stored. | `string` | n/a | yes |
 | infra\_project\_apis | List of APIs to enable for environment-specific application infra projects | `list(string)` | <pre>[<br>  "iam.googleapis.com",<br>  "cloudresourcemanager.googleapis.com",<br>  "serviceusage.googleapis.com",<br>  "cloudbilling.googleapis.com"<br>]</pre> | no |
 | kms\_project\_id | Custom KMS Key project to be granted KMS Admin and KMS Signer Verifier to the Cloud Build service account. | `string` | `null` | no |
-| location | Location for build buckets. | `string` | `"us-central1"` | no |
+| location | Location for build buckets. | `string` | `"us-east1"` | no |
 | org\_id | Google Cloud Organization ID. | `string` | n/a | yes |
 | remote\_state\_project\_id | The project id where remote state are stored. It will be used to allow egress from VPC-SC if is being used. | `string` | n/a | yes |
 | service\_name | The name of a single service application. | `string` | `"demo-app"` | no |

@@ -43,7 +43,7 @@ Fleetscope is a Good Stage to install Kueue, alongside other cluster installatio
         source                   = "../private_install_manifest"
         url                      = "https://github.com/kubernetes-sigs/kueue/releases/download/v0.10.1/manifests.yaml"
         project_id               = regex(local.fleet_membership_regex, each.value)[0]
-        region                   = "us-central1"
+        region                   = "us-east1"
         k8s_registry             = "registry.k8s.io"
         cluster_name             = regex(local.fleet_membership_regex, each.value)[2]
         cluster_region           = regex(local.fleet_membership_regex, each.value)[1]

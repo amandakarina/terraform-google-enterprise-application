@@ -55,7 +55,7 @@ func TestSourceCymbalShop(t *testing.T) {
 		env_cluster_membership_ids[envName]["cluster_membership_ids"] = testutils.GetBptOutputStrSlice(multitenant, "cluster_membership_ids")
 	}
 
-	region := "us-central1" // TODO: Plumb output from appInfra
+	region := "us-east1" // TODO: Plumb output from appInfra
 	appName := "cymbal-shop"
 	serviceName := "cymbalshop"
 	appSourcePath := fmt.Sprintf("../../../examples/%s/6-appsource/%s", appName, appName)

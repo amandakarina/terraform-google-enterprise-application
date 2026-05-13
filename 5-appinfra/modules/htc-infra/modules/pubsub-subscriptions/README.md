@@ -9,7 +9,7 @@ module "pubsub_bigquery" {
   source = "github.com/GoogleCloudPlatform/risk-and-research-blueprints//terraform/modules/pubsub-subscriptions"
 
   project_id                 = "your-project-id"
-  region                     = "us-central1"
+  region                     = "us-east1"
   bigquery_dataset           = "analytics_dataset"
   bigquery_table             = "pubsub_messages"
   topics                     = ["topic-1", "topic-2", "topic-3"]

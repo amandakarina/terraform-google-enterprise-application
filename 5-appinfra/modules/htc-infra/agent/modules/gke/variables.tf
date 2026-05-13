@@ -31,7 +31,7 @@ variable "cluster_project_id" {
 variable "regions" {
   description = "List of regions where GKE clusters should be created"
   type        = list(string)
-  default     = ["us-central1"]
+  default     = ["us-east1"]
 }
 
 variable "gke_cluster_names" {

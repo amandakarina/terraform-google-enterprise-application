@@ -36,7 +36,7 @@ zones=["<letter zone1>", "<letter zone2>", "<letter zone3>"]
 For example in us-central1:
 ```
 project_id="<project id>"
-region="us-central1"
+region="us-east1"
 zones=["a", "b", "c", "f"]
 ```
 
@@ -119,7 +119,7 @@ links into the Console.
 | environment\_names | A list of environment names. | `list(string)` | n/a | yes |
 | envs | Environments | <pre>map(object({<br>    network_self_link = string<br>  }))</pre> | n/a | yes |
 | logging\_bucket | Bucket to store logging. | `string` | `null` | no |
-| region | CI/CD region | `string` | `"us-central1"` | no |
+| region | CI/CD region | `string` | `"us-east1"` | no |
 | remote\_state\_bucket | Backend bucket to load Terraform Remote State Data from previous steps. | `string` | n/a | yes |
 | team | Example's team name | `string` | n/a | yes |
 

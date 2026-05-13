@@ -9,7 +9,7 @@ module "artifact_registry" {
   source = "github.com/GoogleCloudPlatform/risk-and-research-blueprints//terraform/modules/artifact-registry"
 
   project_id        = "your-project-id"
-  regions           = ["us-central1", "us-east4"]
+  regions           = ["us-east1", "us-east4"]
   name              = "research-images"
   cleanup_keep_count = 10
 }
@@ -27,7 +27,7 @@ module "artifact_registry" {
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|----------|
 | project_id | The GCP project where the resources will be created | `string` | n/a | yes |
-| regions | List of regions where resources will be deployed - used to determine the multi-region location | `list(string)` | `["us-central1"]` | no |
+| regions | List of regions where resources will be deployed - used to determine the multi-region location | `list(string)` | `["us-east1"]` | no |
 | name | Name of the Artifact Registry | `string` | `"research-images"` | no |
 | cleanup_keep_count | Number of most recent container image versions to keep in Artifact Registry cleanup policy | `number` | `10` | no |
 
@@ -69,7 +69,7 @@ limitations under the License.
 | cleanup\_keep\_count | Number of most recent container image versions to keep in Artifact Registry cleanup policy | `number` | `10` | no |
 | name | Name of the Artifact Registry | `string` | `"research-images"` | no |
 | project\_id | The GCP project where the resources will be created | `string` | n/a | yes |
-| regions | List of regions where GKE clusters will be deployed - used to determine the multi-region location | `list(string)` | <pre>[<br>  "us-central1"<br>]</pre> | no |
+| regions | List of regions where GKE clusters will be deployed - used to determine the multi-region location | `list(string)` | <pre>[<br>  "us-east1"<br>]</pre> | no |
 
 ## Outputs
 

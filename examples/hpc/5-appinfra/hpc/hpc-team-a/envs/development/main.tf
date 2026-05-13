@@ -29,7 +29,7 @@ module "provision-ai-training-infra" {
   infra_project            = local.app_project_id
   cluster_project          = local.cluster_project_id
   cluster_project_number   = local.cluster_project_number
-  region                   = "us-central1"
+  region                   = "us-east1"
   env                      = local.env
   cluster_service_accounts = local.cluster_service_accounts
   bucket_force_destroy     = var.bucket_force_destroy

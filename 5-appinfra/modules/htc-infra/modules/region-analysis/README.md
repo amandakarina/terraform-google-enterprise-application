@@ -8,7 +8,7 @@ This module analyzes a list of GCP regions to determine the optimal multi-region
 module "region_analysis" {
   source = "github.com/GoogleCloudPlatform/risk-and-research-blueprints//terraform/modules/region-analysis"
 
-  regions = ["us-central1", "us-east4", "europe-west4"]
+  regions = ["us-east1", "us-east4", "europe-west4"]
 }
 
 # Use the determined multi-region

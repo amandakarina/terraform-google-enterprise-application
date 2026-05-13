@@ -23,7 +23,7 @@ locals {
   env_subnet_configs = {
     "development" = {
       psc_ip = "10.10.0.5",
-      "us-central1" = {
+      "us-east1" = {
         subnet_ip          = "10.10.1.0/24"
         secondary_range_01 = "10.11.0.0/18"
         secondary_range_02 = "10.12.0.0/18"
@@ -36,7 +36,7 @@ locals {
     },
     "nonproduction" = {
       psc_ip = "10.20.0.5",
-      "us-central1" = {
+      "us-east1" = {
         subnet_ip          = "10.20.1.0/24"
         secondary_range_01 = "10.21.0.0/18"
         secondary_range_02 = "10.22.0.0/18"
@@ -49,7 +49,7 @@ locals {
     },
     "production" = {
       psc_ip = "10.30.0.5",
-      "us-central1" = {
+      "us-east1" = {
         subnet_ip          = "10.30.1.0/24"
         secondary_range_01 = "10.31.0.0/18"
         secondary_range_02 = "10.32.0.0/18"

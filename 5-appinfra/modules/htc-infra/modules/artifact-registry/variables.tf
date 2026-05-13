@@ -26,7 +26,7 @@ variable "project_id" {
 variable "regions" {
   description = "List of regions where GKE clusters will be deployed - used to determine the multi-region location"
   type        = list(string)
-  default     = ["us-central1"]
+  default     = ["us-east1"]
 }
 
 variable "name" {

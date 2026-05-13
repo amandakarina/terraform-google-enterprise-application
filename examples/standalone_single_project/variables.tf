@@ -32,7 +32,7 @@ variable "subnetwork_self_link" {
 variable "region" {
   type        = string
   description = "Google Cloud region for deployments"
-  default     = "us-central1"
+  default     = "us-east1"
 }
 
 variable "teams" {

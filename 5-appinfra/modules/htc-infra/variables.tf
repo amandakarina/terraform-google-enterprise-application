@@ -18,7 +18,7 @@
 variable "regions" {
   description = "List of regions where GKE clusters should be created. Used for multi-region deployments."
   type        = list(string)
-  default     = ["us-central1"]
+  default     = ["us-east1"]
 
   validation {
     condition     = length(var.regions) <= 4

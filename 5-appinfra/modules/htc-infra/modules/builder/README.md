@@ -9,8 +9,8 @@ module "builder" {
   source = "github.com/GoogleCloudPlatform/risk-and-research-blueprints//terraform/modules/builder"
 
   project_id        = "your-project-id"
-  region            = "us-central1"
-  repository_region = "us-central1"
+  region            = "us-east1"
+  repository_region = "us-east1"
   repository_id     = "research-images"
 
   containers = {

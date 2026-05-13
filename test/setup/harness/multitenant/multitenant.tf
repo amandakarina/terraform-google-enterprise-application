@@ -195,24 +195,34 @@ module "cluster_vpc" {
   ]
 
   subnets = concat([{
+    subnet_name           = "eab-${each.key}-us-east1"
+    subnet_ip             = "10.1.10.0/24"
+    subnet_region         = "us-east1"
+    subnet_private_access = true
+    }], !var.agent ? [{
     subnet_name           = "eab-${each.key}-us-central1"
     subnet_ip             = "10.1.20.0/24"
     subnet_region         = "us-central1"
     subnet_private_access = true
-    }], !var.agent ? [{
-    subnet_name           = "eab-${each.key}-us-east4"
-    subnet_ip             = "10.1.10.0/24"
-    subnet_region         = "us-east4"
-    subnet_private_access = true
     }] : [{
-    subnet_name   = "sb-proxy-only-us-central1"
+    subnet_name   = "sb-proxy-only-us-east1"
     subnet_ip     = "10.129.0.0/23"
     purpose       = "REGIONAL_MANAGED_PROXY"
-    subnet_region = "us-central1"
+    subnet_region = "us-east1"
     role          = "ACTIVE"
   }])
 
   secondary_ranges = merge({
+    "eab-${each.key}-us-east1" = [
+      {
+        range_name    = "eab-${each.key}-us-east1-secondary-01"
+        ip_cidr_range = "192.168.128.0/18"
+      },
+      {
+        range_name    = "eab-${each.key}-us-east1-secondary-02"
+        ip_cidr_range = "192.168.192.0/18"
+      },
+    ] }, !var.agent ? {
     "eab-${each.key}-us-central1" = [
       {
         range_name    = "eab-${each.key}-us-central1-secondary-01"
@@ -221,16 +231,6 @@ module "cluster_vpc" {
       {
         range_name    = "eab-${each.key}-us-central1-secondary-02"
         ip_cidr_range = "192.168.64.0/18"
-      },
-    ] }, !var.agent ? {
-    "eab-${each.key}-us-east4" = [
-      {
-        range_name    = "eab-${each.key}-us-east4-secondary-01"
-        ip_cidr_range = "192.168.128.0/18"
-      },
-      {
-        range_name    = "eab-${each.key}-us-east4-secondary-02"
-        ip_cidr_range = "192.168.192.0/18"
       },
   ] } : {})
 }
