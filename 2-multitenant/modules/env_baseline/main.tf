@@ -306,7 +306,7 @@ module "gke-standard" {
       {
         name            = "node-pool-1"
         machine_type    = "g2-standard-4"
-        node_locations  = regex(local.regions_re, data.google_compute_subnetwork.default[each.key].region)[0] == "us-central1" ? "us-central1-a,us-central1-b,us-central1-c" : null
+        node_locations  = data.google_compute_subnetwork.default[each.key].region == "us-central1" ? "us-central1-a,us-central1-b,us-central1-c" : ""
         strategy        = "SURGE"
         max_surge       = 1
         max_unavailable = 0
