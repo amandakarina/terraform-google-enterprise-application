@@ -18,12 +18,12 @@ locals {
   cmd_prompt = "gcloud builds submit ${path.module}/../../../../1-bootstrap/binauthz-attestation/. --tag ${local.binary_auth_image_tag} --project=${var.seed_project_id} --service-account=${var.sa_id} --gcs-log-dir=gs://${var.logging_bucket_name} --worker-pool=${var.workerpool_id} || ( sleep 45 && gcloud builds submit ${path.module}/../../1-bootstrap/binauthz-attestation/. --tag ${local.binary_auth_image_tag} --project=${var.seed_project_id} --service-account=${var.sa_id} --gcs-log-dir=gs://${var.logging_bucket_name} --worker-pool=${var.workerpool_id} )"
 
   binary_auth_image_version = "v1"
-  binary_auth_image_tag     = "us-central1-docker.pkg.dev/${var.seed_project_id}/${google_artifact_registry_repository.attestation_image.name}/binauthz-attestation:${local.binary_auth_image_version}"
+  binary_auth_image_tag     = "${var.region}-docker.pkg.dev/${var.seed_project_id}/${google_artifact_registry_repository.attestation_image.name}/binauthz-attestation:${local.binary_auth_image_version}"
 }
 
 resource "google_artifact_registry_repository" "attestation_image" {
   project       = var.seed_project_id
-  location      = "us-east1"
+  location      = var.region
   repository_id = "binauthz-attestation"
   description   = "Binary Attestation Docker repository"
   format        = "DOCKER"

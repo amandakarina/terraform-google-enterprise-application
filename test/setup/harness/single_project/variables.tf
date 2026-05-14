@@ -19,6 +19,12 @@ variable "org_id" {
   type        = string
 }
 
+variable "region" {
+  description = "Region where KMS and Logging bucket will be deployed."
+  type        = string
+  default     = "us-east1"
+}
+
 variable "seed_project_id" {
   description = "The project where the example will be deployed."
   type        = string
