@@ -33,7 +33,7 @@ module "single_project_vpc" {
 
   subnets = [
     {
-      subnet_name           = "eab-cluster-net-us-east1"
+      subnet_name           = "eab-cluster-net-${var.region}"
       subnet_ip             = "10.1.20.0/24"
       subnet_region         = var.region
       subnet_private_access = true
