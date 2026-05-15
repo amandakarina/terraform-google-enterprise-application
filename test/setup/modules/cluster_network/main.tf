@@ -41,8 +41,8 @@ module "cluster_private_service_connect" {
 
 resource "google_compute_router" "nat_router" {
   for_each = var.shared_vpc_host ? { "create" : true } : {}
-  name     = "nat-router-us-central-1"
-  region   = "us-east1"
+  name     = "nat-router-${var.region}"
+  region   = var.region
   network  = module.cluster_vpc.network_self_link
   project  = module.cluster_vpc.project_id
 }

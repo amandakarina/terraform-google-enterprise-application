@@ -51,3 +51,8 @@ variable "workerpool_machine_type" {
   default     = "e2-standard-4"
 }
 
+variable "region" {
+  description = "Region where KMS and Logging bucket will be deployed."
+  type        = string
+  default     = "us-east1"
+}

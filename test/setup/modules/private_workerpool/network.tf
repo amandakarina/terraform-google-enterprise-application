@@ -48,7 +48,7 @@ module "vpc" {
     {
       subnet_name           = "nat-subnet"
       subnet_ip             = local.nat_proxy_vm_ip_range
-      subnet_region         = "us-east1"
+      subnet_region         = var.region
       subnet_private_access = true
     },
   ]

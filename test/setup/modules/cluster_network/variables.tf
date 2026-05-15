@@ -47,6 +47,12 @@ variable "ingress_rules" {
   default     = []
 }
 
+variable "region" {
+  description = "Region where KMS and Logging bucket will be deployed."
+  type        = string
+  default     = "us-east1"
+}
+
 variable "egress_rules" {
   description = "List of egress rules. This will be ignored if variable 'rules' is non-empty"
   type        = any

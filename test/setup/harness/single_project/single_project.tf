@@ -35,19 +35,19 @@ module "single_project_vpc" {
     {
       subnet_name           = "eab-cluster-net-us-east1"
       subnet_ip             = "10.1.20.0/24"
-      subnet_region         = "us-east1"
+      subnet_region         = var.region
       subnet_private_access = true
     }
   ]
 
   secondary_ranges = {
-    "eab-cluster-net-us-east1" = [
+    "eab-cluster-net-${var.region}" = [
       {
-        range_name    = "eab-cluster-net-us-east1-secondary-01"
+        range_name    = "eab-cluster-net-${var.region}-secondary-01"
         ip_cidr_range = "192.168.0.0/18"
       },
       {
-        range_name    = "eab-cluster-net-us-east1-secondary-02"
+        range_name    = "eab-cluster-net-${var.region}-secondary-02"
         ip_cidr_range = "192.168.64.0/18"
       },
     ],
