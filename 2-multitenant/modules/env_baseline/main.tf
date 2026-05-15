@@ -33,15 +33,15 @@ locals {
   arm_node_pool = { for k, v in local.subnets : k => (regex(local.regions_re, v)[0]) == "us-central1" ?
     [
       {
-        name            = "regional-arm64-pool"
-        machine_type    = "t2a-standard-4"
-        node_locations  = "us-central1-a,us-central1-b,us-central1-f"
-        strategy        = "SURGE"
-        max_surge       = 1
-        max_unavailable = 0
-        autoscaling     = true
-        location_policy = "BALANCED"
-        sandbox_enabled = true
+        name              = "regional-arm64-pool"
+        machine_type      = "t2a-standard-4"
+        node_locations    = "us-central1-a,us-central1-b,us-central1-f"
+        strategy          = "SURGE"
+        max_surge         = 1
+        max_unavailable   = 0
+        autoscaling       = true
+        location_policy   = "BALANCED"
+        max_pods_per_node = 16
       }
     ] : []
   }
@@ -283,10 +283,11 @@ module "gke-standard" {
     min_cpu_cores       = 0
     max_memory_gb       = 1024
     min_memory_gb       = 0
+    disk_size           = 200
     gpu_resources = [
       {
-        resource_type = "nvidia-tesla-t4"
-        minimum       = 0
+        resource_type = "nvidia-l4"
+        minimum       = 1
         maximum       = 4
       }
     ]
@@ -304,11 +305,14 @@ module "gke-standard" {
     [
       {
         name            = "node-pool-1"
-        machine_type    = "e2-standard-4"
+        machine_type    = "g2-standard-4"
+        node_locations  = data.google_compute_subnetwork.default[each.key].region == "us-central1" ? "us-central1-a,us-central1-b,us-central1-c" : ""
         strategy        = "SURGE"
         max_surge       = 1
         max_unavailable = 0
         autoscaling     = true
+        min_count       = 1
+        max_count       = 10
         location_policy = "BALANCED"
       }
   ], local.arm_node_pool[each.key])
