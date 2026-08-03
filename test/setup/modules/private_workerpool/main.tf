@@ -29,7 +29,7 @@ module "private_workerpool_project" {
 
   auto_create_network = true
 
-
+  disable_services_on_destroy = false
 
   activate_apis = [
     "cloudbilling.googleapis.com",
