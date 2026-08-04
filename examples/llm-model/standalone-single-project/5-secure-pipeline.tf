@@ -1,5 +1,5 @@
 /**
- * Copyright 2025 Google LLC
+ * Copyright 2026 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,26 +14,35 @@
  * limitations under the License.
  */
 
+# 5-appinfra
+
+# app_01
 locals {
+
+  cluster_membership_ids = { (local.env) : { "cluster_membership_ids" : module.multitenant_infra.cluster_membership_ids } }
+
+  sa_cb                 = [for cicd in module.cicd : "serviceAccount:${cicd.cloudbuild_service_account}"]
+  projects_re           = "projects/([^/]+)/"
+  secret_project_number = try(regex("projects/([^/]*)/", var.cloudbuildv2_repository_config.gitlab_authorizer_credential_secret_id)[0], null)
+
   application_name = "llm-model"
   service_name     = "llamma-model"
   team_name        = "default"
   repo_name        = "eab-${local.application_name}-${local.service_name}"
   repo_branch      = "main"
 
-  target_deploy_parameters = { for i, p in local.cluster_projects_id : (i) => {
-    "cluster_project_id"      = p
-    "model_armor_template_id" = module.model_armor_configuration[i].template.id
+  target_deploy_parameters = {
+    "cluster_project_id"      = var.project_id
+    "model_armor_template_id" = module.model_armor_configuration.template.id
     "model_armor_location"    = var.region
-    "env_namespace_id"        = "vllm-model-${i}"
-  } }
-
+    "env_namespace_id"        = "vllm-model-${local.env}"
+  }
 }
 
 module "app" {
   source = "../../modules/deployment-pipeline"
 
-  project_id                 = local.app_admin_project
+  project_id                 = var.project_id
   region                     = var.region
   env_cluster_membership_ids = local.cluster_membership_ids
   cluster_service_accounts   = { for i, sa in local.cluster_service_accounts : (i) => "serviceAccount:${sa}" }
@@ -49,17 +58,18 @@ module "app" {
 
   cloudbuildv2_repository_config = var.cloudbuildv2_repository_config
 
-  workerpool_id     = data.terraform_remote_state.bootstrap.outputs.cb_private_workerpool_id
+  workerpool_id     = local.workerpool_id
   access_level_name = var.access_level_name
   logging_bucket    = var.logging_bucket
   bucket_kms_key    = var.bucket_kms_key
 
   target_deploy_parameters = local.target_deploy_parameters
 
-  attestation_kms_key                = var.attestation_kms_key
-  attestor_id                        = var.attestation_kms_key != null ? contains(var.environment_names, "production") ? data.terraform_remote_state.fleetscope["production"].outputs.attestor_id : data.terraform_remote_state.fleetscope[var.environment_names[0]].outputs.attestor_id : null
-  binary_authorization_image         = data.terraform_remote_state.bootstrap.outputs.binary_authorization_image
-  binary_authorization_repository_id = data.terraform_remote_state.bootstrap.outputs.binary_authorization_repository_id
+  attestation_kms_key = var.attestation_kms_key
+  attestor_id         = var.attestation_kms_key != null ? module.fleetscope_infra.attestor_id : null
+
+  binary_authorization_image         = module.binary_autz.binary_authorization_image
+  binary_authorization_repository_id = module.binary_autz.binary_authorization_repository_id
 
 }
 
@@ -67,10 +77,9 @@ module "model_armor_configuration" {
   source  = "GoogleCloudPlatform/vertex-ai/google//modules/model-armor-template"
   version = "~> 2.3"
 
-  for_each    = local.cluster_projects_id
   template_id = "ma-${local.application_name}-${local.service_name}"
   location    = var.region
-  project_id  = each.value
+  project_id  = var.project_id
 
   rai_filters = {
     dangerous         = "LOW_AND_ABOVE"
@@ -103,23 +112,20 @@ module "model_armor_configuration" {
 }
 
 resource "google_service_account" "gsa_llamma_model" {
-  for_each                     = local.cluster_projects_id
-  project                      = each.value
+  project                      = var.project_id
   account_id                   = "gsa-llamma-model"
   display_name                 = "GSA for llamma-model"
   create_ignore_already_exists = true
 }
 
 resource "google_project_iam_member" "gsa_trace_agent" {
-  for_each = google_service_account.gsa_llamma_model
-  project  = each.value.project
-  role     = "roles/cloudtrace.agent"
-  member   = each.value.member
+  project = var.project_id
+  role    = "roles/cloudtrace.agent"
+  member  = google_service_account.gsa_llamma_model.member
 }
 
 resource "google_service_account_iam_member" "wi_binding" {
-  for_each           = google_service_account.gsa_llamma_model
-  service_account_id = each.value.name
+  service_account_id = google_service_account.gsa_llamma_model.name
   role               = "roles/iam.workloadIdentityUser"
-  member             = "serviceAccount:${each.value.project}.svc.id.goog[vllm-model-${each.key}/llamma-model-ksa]"
+  member             = "serviceAccount:${var.project_id}.svc.id.goog[vllm-model-${local.env}/llamma-model-ksa]"
 }
