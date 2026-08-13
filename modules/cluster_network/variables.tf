@@ -29,12 +29,6 @@ variable "region" {
   type        = string
 }
 
-variable "shared_vpc_host" {
-  description = "Makes this project a Shared VPC host if 'true' (default 'false')"
-  type        = bool
-  default     = false
-}
-
 variable "subnets" {
   description = "Sub-networks to be created."
   type        = any
@@ -56,4 +50,14 @@ variable "egress_rules" {
   description = "List of egress rules. This will be ignored if variable 'rules' is non-empty"
   type        = any
   default     = []
+}
+
+variable "ncc_hub_uri" {
+  description = "The NCC Hub ID"
+  type        = string
+}
+
+variable "hub_network_name" {
+  description = "The name of the VPC being created"
+  type        = string
 }

@@ -14,13 +14,16 @@
  * limitations under the License.
  */
 
+data "google_project" "project" {
+  project_id = var.project_id
+}
+
 module "cluster_network" {
   source = "../../modules/cluster_network"
 
-  vpc_name        = "vpc-eab-cluster"
-  project_id      = var.project_id
-  region          = var.regions[0]
-  shared_vpc_host = false
+  vpc_name   = "vpc-eab-cluster"
+  project_id = var.project_id
+  region     = var.regions[0]
   subnets = [for i, region in var.regions :
     {
       subnet_name           = "eab-cluster-net-${region}"
@@ -43,4 +46,65 @@ module "cluster_network" {
       },
     ]
   }
+  ncc_hub_uri      = var.ncc_hub_uri
+  hub_network_name = var.hub_network_name
+
+}
+
+resource "google_access_context_manager_service_perimeter_egress_policy" "container_egress" {
+  count     = var.service_perimeter_mode == "ENFORCE" && var.service_perimeter_name != "" ? 1 : 0
+  perimeter = var.service_perimeter_name
+  title     = "e-${data.google_project.project.number}-to-projects/398042134881"
+  egress_from {
+    sources {
+      access_level = "*"
+    }    
+    source_restriction = "SOURCE_RESTRICTION_ENABLED"   
+  }
+  egress_to {
+    resources = ["projects/398042134881"]
+    operations {
+      service_name = "logging.googleapis.com"
+      method_selectors {
+        method = "*"
+      }
+    }
+  }
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "google_access_context_manager_service_perimeter_dry_run_egress_policy" "container_egress" {
+  count     = var.service_perimeter_name != "" ? 1 : 0
+  perimeter = var.service_perimeter_name
+  title     = "e-${data.google_project.project.number}-to-projects/398042134881"
+  egress_from {
+    sources {
+      access_level = "*"
+      
+    } 
+    source_restriction = "SOURCE_RESTRICTION_ENABLED"   
+  }
+  egress_to {
+    resources = ["projects/398042134881"]
+    operations {
+      service_name = "logging.googleapis.com"
+      method_selectors {
+        method = "*"
+      }
+    }
+  }
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "time_sleep" "wait_for_perimeter_replication" {
+  create_duration = "2m"
+  destroy_duration  = "2m"
+  depends_on = [
+    google_access_context_manager_service_perimeter_dry_run_egress_policy.container_egress,
+    google_access_context_manager_service_perimeter_egress_policy.container_egress
+  ]
 }

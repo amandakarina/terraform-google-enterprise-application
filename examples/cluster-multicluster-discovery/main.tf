@@ -48,6 +48,8 @@ module "multitenant_infra" {
   deletion_protection    = false
 
   cb_private_workerpool_project_id = var.project_id
+
+  depends_on = [time_sleep.wait_for_perimeter_replication]
 }
 
 module "fleetscope_infra" {
@@ -70,4 +72,6 @@ module "fleetscope_infra" {
   enable_multicluster_discovery = true
 
   disable_istio_on_namespaces = var.disable_istio_on_namespaces
+
+  depends_on = [time_sleep.wait_for_perimeter_replication]
 }

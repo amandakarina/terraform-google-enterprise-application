@@ -1,5 +1,5 @@
 /**
- * Copyright 2025 Google LLC
+ * Copyright 2026 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,10 @@
  * limitations under the License.
  */
 
-terraform {
-  required_version = ">= 1.3"
-  required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = ">= 6.6 , < 8"
-    }
-    google-beta = {
-      source  = "hashicorp/google-beta"
-      version = ">= 6.6, < 8"
-    }
-    time = {
-      source  = "hashicorp/time"
-      version = ">= 0.12.0"
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = ">= 3.7.2"
-    }
-  }
+module "hub" {
+  source = "../../modules/ncc_hub"
+
+  project_id_hub            = var.seed_project_id
+  network_name_hub          = "vpc-eab-hub"
+  auto_accept_projects_edge = var.auto_accept_projects_edge
 }

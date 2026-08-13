@@ -16,30 +16,30 @@
 
 output "project_id" {
   description = "Network project id."
-  value       = module.cluster_vpc.project_id
+  value       = module.spoke.project_id
 }
 
 output "subnets_self_links" {
   description = "Subnets self-links."
-  value       = module.cluster_vpc.subnets_self_links
+  value       = module.spoke.subnets_self_links
 }
 
 output "subnets_names" {
   description = "Subnets self-links."
-  value       = module.cluster_vpc.subnets_names
+  value       = module.spoke.subnets_names
 }
 
 output "network_self_link" {
   description = "Network self-link."
-  value       = module.cluster_vpc.network_self_link
+  value       = module.spoke.network_self_link
 }
 
 output "network_name" {
   description = "Network name."
-  value       = module.cluster_vpc.network_name
+  value       = module.spoke.network_name
 }
 
 output "network_id" {
   description = "Network name."
-  value       = module.cluster_vpc.network_id
+  value       = module.spoke.network.network_id
 }

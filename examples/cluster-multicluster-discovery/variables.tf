@@ -27,13 +27,13 @@ variable "regions" {
 variable "base_cidr" {
   type        = string
   description = "Base CIDR for the VPC primary ranges"
-  default     = "10.1.0.0/16"
+  default     = "10.1.0.0/24"
 }
 
 variable "pods_base_cidr" {
   type        = string
   description = "Base CIDR for Kubernetes Pods secondary ranges"
-  default     = "10.2.0.0/16"
+  default     = "10.2.0.0/20"
 }
 
 variable "services_base_cidr" {
@@ -103,4 +103,14 @@ variable "config_sync_branch" {
   type        = string
   description = "The branch of the repository to sync from. Default: master"
   default     = "master"
+}
+
+variable "ncc_hub_uri" {
+  description = "The NCC Hub ID"
+  type        = string
+}
+
+variable "hub_network_name" {
+  description = "The name of the VPC being created"
+  type        = string
 }

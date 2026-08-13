@@ -14,51 +14,48 @@
  * limitations under the License.
  */
 
-module "cluster_vpc" {
-  source  = "terraform-google-modules/network/google"
-  version = "~> 18.1"
+locals {
+  private_service_cidr_spoke       = "10.16.56.0/21"
+  private_service_connect_ip_spoke = "10.17.0.8"
+}
 
-  project_id      = var.project_id
-  network_name    = "vpc-${var.vpc_name}"
-  shared_vpc_host = var.shared_vpc_host
+module "spoke" {
+  source = "git::https://github.com/daniel-cit/terraform-google-network.git//modules/foundation/network?ref=ncc-and-peering-changes"
 
-  ingress_rules = var.ingress_rules
-  egress_rules  = var.egress_rules
+  project_id                      = var.project_id
+  vpc_name                        = var.vpc_name
+  private_service_connect_ip      = local.private_service_connect_ip_spoke
+  private_service_cidr            = local.private_service_cidr_spoke
+  enable_all_vpc_internal_traffic = true
+  shared_vpc_host                 = false
+
+  resource_codes = {
+    short = "s"
+    long  = "spoke"
+  }
+
+  dns_config = {
+    dns_hub_project_id   = var.project_id
+    dns_hub_network_name = var.hub_network_name
+    type                 = "spoke"
+  }
+
+  ncc_hub_config = {
+    create_hub  = false
+    export_psc  = true
+    spoke_group = "edge"
+    uri         = var.ncc_hub_uri
+
+    hub_labels = {
+      type = "spoke"
+    }
+    spoke_labels = {
+      type = "spoke_vpc"
+    }
+
+  }
 
   subnets          = var.subnets
   secondary_ranges = var.secondary_ranges
-}
 
-module "cluster_private_service_connect" {
-  source  = "terraform-google-modules/network/google//modules/private-service-connect"
-  version = "~> 18.0"
-  count   = var.shared_vpc_host ? 1 : 0
-
-  project_id                 = module.cluster_vpc.project_id
-  network_self_link          = module.cluster_vpc.network_self_link
-  private_service_connect_ip = "10.3.0.5"
-  forwarding_rule_target     = "vpc-sc"
-}
-
-resource "google_compute_router" "nat_router" {
-  for_each = var.shared_vpc_host ? { "create" : true } : {}
-  name     = "nat-router-${var.region}"
-  region   = var.region
-  network  = module.cluster_vpc.network_self_link
-  project  = module.cluster_vpc.project_id
-}
-
-resource "google_compute_router_nat" "cloud_nat" {
-  for_each                           = google_compute_router.nat_router
-  name                               = "cloud-nat"
-  router                             = each.value.name
-  region                             = each.value.region
-  project                            = module.cluster_vpc.project_id
-  nat_ip_allocate_option             = "AUTO_ONLY"
-  source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
-
-  log_config {
-    enable = true
-    filter = "ERRORS_ONLY"
-  }
 }
