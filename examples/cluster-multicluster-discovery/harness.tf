@@ -14,6 +14,13 @@
  * limitations under the License.
  */
 
+locals {
+  initialIP = 26
+  subnet_proxy_ranges_hub = { for i, region in var.regions :
+    (region) => "10.${local.initialIP + 1}.0.0/23"
+  }
+}
+
 data "google_project" "project" {
   project_id = var.project_id
 }
@@ -24,14 +31,24 @@ module "cluster_network" {
   vpc_name   = "vpc-eab-cluster"
   project_id = var.project_id
   region     = var.regions[0]
-  subnets = [for i, region in var.regions :
+  subnets = concat([for i, region in var.regions :
     {
-      subnet_name           = "eab-cluster-net-${region}"
+      subnet_name           = "sb-h-vpc-eab-cluster-${region}"
       subnet_ip             = cidrsubnet(var.base_cidr, 8, i)
       subnet_region         = region
       subnet_private_access = true
     }
-  ]
+    ], [for i, region in var.regions :
+    {
+      subnet_name           = "sb-h-vpc-${region}-proxy"
+      subnet_ip             = "10.26.0.0/23"
+      subnet_region         = region
+      subnet_flow_logs      = false
+      subnet_private_access = false
+      description           = "Network proxy-only subnet for ${region}"
+      role                  = "ACTIVE"
+      purpose               = "REGIONAL_MANAGED_PROXY"
+  }])
 
   secondary_ranges = {
     for i, region in var.regions :
@@ -49,6 +66,15 @@ module "cluster_network" {
   ncc_hub_uri      = var.ncc_hub_uri
   hub_network_name = var.hub_network_name
 
+  nat_config = {
+    enabled = true
+    regions = [for region in var.regions :
+      {
+        name          = region,
+        num_addresses = 2
+      }
+    ]
+  }
 }
 
 resource "google_access_context_manager_service_perimeter_egress_policy" "container_egress" {
@@ -58,8 +84,8 @@ resource "google_access_context_manager_service_perimeter_egress_policy" "contai
   egress_from {
     sources {
       access_level = "*"
-    }    
-    source_restriction = "SOURCE_RESTRICTION_ENABLED"   
+    }
+    source_restriction = "SOURCE_RESTRICTION_ENABLED"
   }
   egress_to {
     resources = ["projects/398042134881"]
@@ -82,9 +108,9 @@ resource "google_access_context_manager_service_perimeter_dry_run_egress_policy"
   egress_from {
     sources {
       access_level = "*"
-      
-    } 
-    source_restriction = "SOURCE_RESTRICTION_ENABLED"   
+
+    }
+    source_restriction = "SOURCE_RESTRICTION_ENABLED"
   }
   egress_to {
     resources = ["projects/398042134881"]
@@ -101,8 +127,8 @@ resource "google_access_context_manager_service_perimeter_dry_run_egress_policy"
 }
 
 resource "time_sleep" "wait_for_perimeter_replication" {
-  create_duration = "2m"
-  destroy_duration  = "2m"
+  create_duration  = "2m"
+  destroy_duration = "2m"
   depends_on = [
     google_access_context_manager_service_perimeter_dry_run_egress_policy.container_egress,
     google_access_context_manager_service_perimeter_egress_policy.container_egress

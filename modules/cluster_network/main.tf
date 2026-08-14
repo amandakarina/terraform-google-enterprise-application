@@ -29,11 +29,7 @@ module "spoke" {
   enable_all_vpc_internal_traffic = true
   shared_vpc_host                 = false
 
-  resource_codes = {
-    short = "s"
-    long  = "spoke"
-  }
-
+  resource_code = "s"
   dns_config = {
     dns_hub_project_id   = var.project_id
     dns_hub_network_name = var.hub_network_name
@@ -52,8 +48,9 @@ module "spoke" {
     spoke_labels = {
       type = "spoke_vpc"
     }
-
   }
+
+  nat_config = var.nat_config
 
   subnets          = var.subnets
   secondary_ranges = var.secondary_ranges

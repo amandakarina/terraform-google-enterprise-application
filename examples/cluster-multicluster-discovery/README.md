@@ -140,6 +140,8 @@ If deploying within an enforced VPC Service Controls perimeter, additional acces
 | config\_sync\_repository\_url | The Git repository url for Config Sync. If `config_sync_secret_type` value is `gcpserviceaccount`, a Cloud Source Repository will automatically be created and this variable will be ignored. | `string` | `""` | no |
 | config\_sync\_secret\_type | The type of `Secret` configured for access to the Config Sync Git repo. Must be `ssh`, `cookiefile`, `gcenode`, `gcpserviceaccount`, `githubapp`, `token`, or `none`. Depending on the credential type, additional steps must be executed prior to this step. Refer to the following documentation for guidance: https://cloud.google.com/kubernetes-engine/enterprise/config-sync/docs/how-to/installing-config-sync#git-creds-secret | `string` | `"gcpserviceaccount"` | no |
 | disable\_istio\_on\_namespaces | List the namespaces where you don't want the service mesh to be enabled (i.e. sidecar proxy injection). Ensure that the namespace names match exactly with those defined in 'var.namespace\_ids'. | `list(string)` | `[]` | no |
+| hub\_network\_name | The name of the VPC being created | `string` | n/a | yes |
+| ncc\_hub\_uri | The NCC Hub ID | `string` | n/a | yes |
 | pods\_base\_cidr | Base CIDR for Kubernetes Pods secondary ranges | `string` | `"10.2.0.0/16"` | no |
 | project\_id | Google Cloud project ID in which to deploy all example resources | `string` | n/a | yes |
 | regions | Google Cloud regions for cluster | `list(string)` | n/a | yes |

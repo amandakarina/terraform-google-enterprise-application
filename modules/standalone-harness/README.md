@@ -29,14 +29,20 @@ module "standalone_harness" {
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | additional\_services | Additional GCP services to enable in the project. | `list(string)` | `[]` | no |
+| base\_cidr | Base CIDR for the VPC primary ranges | `string` | `"10.1.0.0/24"` | no |
 | create\_nat | Enables Cloud NAT creation for Private Worker Pool. | `bool` | `true` | no |
 | enables\_network\_connection\_and\_peering\_routes | Enables Network connection and peering routes. | `bool` | `true` | no |
+| hub\_network\_name | The name of the VPC being created | `string` | n/a | yes |
 | logging\_bucket | Bucket to store logging. | `string` | `null` | no |
+| ncc\_hub\_uri | The NCC Hub ID | `string` | n/a | yes |
 | network\_id | The network ID where the private worker pool is going to be peered. | `string` | `null` | no |
+| pods\_base\_cidr | Base CIDR for Kubernetes Pods secondary ranges | `string` | `"10.2.0.0/20"` | no |
 | project\_id | Google Cloud project ID in which to deploy all harness resources. | `string` | n/a | yes |
 | region | Google Cloud region for deployments. | `string` | `"us-central1"` | no |
+| regions | Google Cloud regions for cluster | `list(string)` | n/a | yes |
 | secondary\_ip\_cidr\_range\_01 | Secondary CIDR range 1 for pods/services. | `string` | `"192.168.0.0/18"` | no |
 | secondary\_ip\_cidr\_range\_02 | Secondary CIDR range 2 for pods/services. | `string` | `"192.168.64.0/18"` | no |
+| services\_base\_cidr | Base CIDR for Kubernetes Services secondary ranges | `string` | `"10.3.0.0/16"` | no |
 | subnet\_ip | Primary subnet CIDR block. | `string` | `"10.1.20.0/24"` | no |
 | vpc\_name | Name of the VPC to create. | `string` | `"eab-cluster"` | no |
 | workerpool\_id | Specifies the Cloud Build Worker Pool that will be utilized for triggers. | `string` | `null` | no |

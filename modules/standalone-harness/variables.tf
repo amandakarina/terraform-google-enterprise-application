@@ -84,3 +84,36 @@ variable "secondary_ip_cidr_range_02" {
   description = "Secondary CIDR range 2 for pods/services."
   default     = "192.168.64.0/18"
 }
+
+variable "base_cidr" {
+  type        = string
+  description = "Base CIDR for the VPC primary ranges"
+  default     = "10.1.0.0/24"
+}
+
+variable "pods_base_cidr" {
+  type        = string
+  description = "Base CIDR for Kubernetes Pods secondary ranges"
+  default     = "10.2.0.0/20"
+}
+
+variable "services_base_cidr" {
+  type        = string
+  description = "Base CIDR for Kubernetes Services secondary ranges"
+  default     = "10.3.0.0/16"
+}
+
+variable "ncc_hub_uri" {
+  description = "The NCC Hub ID"
+  type        = string
+}
+
+variable "hub_network_name" {
+  description = "The name of the VPC being created"
+  type        = string
+}
+
+variable "regions" {
+  type        = list(string)
+  description = "Google Cloud regions for cluster"
+}

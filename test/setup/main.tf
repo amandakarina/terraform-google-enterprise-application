@@ -163,3 +163,10 @@ module "group" {
   description  = "Group module test group for ${each.key}"
   domain       = data.google_organization.org.domain
 }
+
+module "hub" {
+  source = "./harness/hub_network"
+
+  seed_project_id           = module.seed_project.project_id
+  auto_accept_projects_edge = [module.seed_project.project_id]
+}

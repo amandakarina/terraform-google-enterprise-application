@@ -61,3 +61,26 @@ variable "hub_network_name" {
   description = "The name of the VPC being created"
   type        = string
 }
+
+variable "nat_config" {
+  description = <<-EOT
+    Configuration for Cloud NAT and underlying Cloud Routers.
+    Attributes:
+    - enabled: Set to true to create NAT resources. If false, no routers or NAT IPs are provisioned (default: false).
+    - egress_tags: Network tags used for routing internet egress traffic (default: ["egress-internet"]).
+    - bgp_asn: The BGP Autonomous System Number assigned to the Cloud Router (default: 64512).
+    - regions: Defines which regions get a NAT router.
+      - name: The GCP region name (e.g., "us-central1") where the router and NAT will be deployed.
+      - num_addresses: The number of static external IP addresses to manually allocate and assign to the NAT gateway in this region (default: 2).
+  EOT
+  type = object({
+    enabled     = optional(bool, false)
+    egress_tags = optional(list(string), ["egress-internet"])
+    bgp_asn     = optional(number, 64512)
+    regions = optional(list(object({
+      name          = string
+      num_addresses = optional(number, 2)
+    })))
+  })
+  default = {}
+}

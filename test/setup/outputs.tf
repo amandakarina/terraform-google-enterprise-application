@@ -62,3 +62,13 @@ output "single_project" {
 output "hpc" {
   value = var.hpc
 }
+
+output "ncc_hub_uri" {
+  value       = module.hub.ncc_hub_uri
+  description = "The NCC Hub ID"
+}
+
+output "hub_network_name" {
+  value       = module.hub.hub_network_name
+  description = "The name of the VPC being created"
+}

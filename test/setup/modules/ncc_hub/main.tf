@@ -45,20 +45,6 @@ locals {
     (local.default_region1) = "10.26.0.0/23"
     (local.default_region2) = "10.27.0.0/23"
   }
-
-  private_service_cidr_spoke       = "10.16.56.0/21"
-  private_service_connect_ip_spoke = "10.17.0.8"
-
-  subnet_primary_ranges_spoke = {
-    (local.default_region1) = "10.8.192.0/18"
-    (local.default_region2) = "10.9.192.0/18"
-  }
-
-  subnet_proxy_ranges_spoke = {
-    (local.default_region1) = "10.26.6.0/23"
-    (local.default_region2) = "10.27.6.0/23"
-  }
-
   secondary_ranges_spoke = {
     (local.default_region1) = [
       {
@@ -85,11 +71,7 @@ module "hub" {
   enable_all_vpc_internal_traffic = false
   shared_vpc_host                 = false
 
-  resource_codes = {
-    short = "h"
-    long  = "hub"
-  }
-
+  resource_code = "h"
   dns_config = {
     onprem_forwarding = true
     type              = "hub"

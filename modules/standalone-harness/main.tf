@@ -87,31 +87,34 @@ module "binary_autz" {
 }
 
 module "cluster_network" {
-  source          = "../cluster_network"
-  vpc_name        = var.vpc_name
-  project_id      = var.project_id
-  region          = var.region
-  shared_vpc_host = false
-  subnets = [
+  source = "../../modules/cluster_network"
+
+  vpc_name   = "vpc-eab-cluster"
+  project_id = var.project_id
+  region     = var.regions[0]
+  subnets = [for i, region in var.regions :
     {
-      subnet_name           = "${var.vpc_name}-net-${var.region}"
-      subnet_ip             = var.subnet_ip
-      subnet_region         = var.region
+      subnet_name           = "eab-cluster-net-${region}"
+      subnet_ip             = cidrsubnet(var.base_cidr, 8, i)
+      subnet_region         = region
       subnet_private_access = true
     }
   ]
 
   secondary_ranges = {
-    "${var.vpc_name}-net-${var.region}" = [
+    for i, region in var.regions :
+    "eab-cluster-net-${region}" => [
       {
-        range_name    = "${var.vpc_name}-net-${var.region}-secondary-01"
-        ip_cidr_range = var.secondary_ip_cidr_range_01
+        range_name    = "eab-cluster-net-${region}-secondary-01"
+        ip_cidr_range = cidrsubnet(var.pods_base_cidr, 2, i)
       },
       {
-        range_name    = "${var.vpc_name}-net-${var.region}-secondary-02"
-        ip_cidr_range = var.secondary_ip_cidr_range_02
+        range_name    = "eab-cluster-net-${region}-secondary-02"
+        ip_cidr_range = cidrsubnet(var.services_base_cidr, 2, i)
       },
-    ],
+    ]
   }
-  depends_on = [google_project_service.required_services]
+  ncc_hub_uri      = var.ncc_hub_uri
+  hub_network_name = var.hub_network_name
+
 }

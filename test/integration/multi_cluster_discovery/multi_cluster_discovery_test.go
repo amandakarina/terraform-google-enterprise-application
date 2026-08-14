@@ -46,10 +46,6 @@ func TestMultiClusterDiscovery(t *testing.T) {
 	loggingHarness := tft.NewTFBlueprintTest(t,
 		tft.WithTFDir(loggingHarnessPath),
 	)
-	hubNetworkPath := "../../setup/harness/hub_network"
-	hubNetwork := tft.NewTFBlueprintTest(t,
-		tft.WithTFDir(hubNetworkPath),
-	)
 
 	envName := "development"
 	forkRepository := os.Getenv("HEAD_REPO_URL")
@@ -72,8 +68,8 @@ func TestMultiClusterDiscovery(t *testing.T) {
 		"config_sync_repository_url": forkRepository,
 		"config_sync_policy_dir":     configSyncPath,
 		"config_sync_branch":         branch,
-		"hub_network_name":           hubNetwork.GetStringOutput("hub_network_name"),
-		"ncc_hub_uri":                hubNetwork.GetStringOutput("ncc_hub_uri"),
+		"hub_network_name":           vpcsc.GetTFSetupStringOutput("hub_network_name"),
+		"ncc_hub_uri":                vpcsc.GetTFSetupStringOutput("ncc_hub_uri"),
 	}
 
 	setupNamespaces := setup.GetJsonOutput("teams")

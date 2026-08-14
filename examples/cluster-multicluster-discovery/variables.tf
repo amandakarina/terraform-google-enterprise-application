@@ -27,13 +27,13 @@ variable "regions" {
 variable "base_cidr" {
   type        = string
   description = "Base CIDR for the VPC primary ranges"
-  default     = "10.1.0.0/24"
+  default     = "10.1.0.0/16"
 }
 
 variable "pods_base_cidr" {
   type        = string
   description = "Base CIDR for Kubernetes Pods secondary ranges"
-  default     = "10.2.0.0/20"
+  default     = "10.2.0.0/16"
 }
 
 variable "services_base_cidr" {
