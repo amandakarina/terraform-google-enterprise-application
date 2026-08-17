@@ -149,6 +149,38 @@ module "seed_project" {
   ]
 }
 
+module "hub_project" {
+  source  = "terraform-google-modules/project-factory/google"
+  version = "~> 18.0"
+
+  name                     = "ci-eab-hub"
+  random_project_id        = "true"
+  random_project_id_length = 4
+  org_id                   = var.org_id
+  folder_id                = module.folder_seed.id
+  billing_account          = var.billing_account
+  deletion_policy          = "DELETE"
+  default_service_account  = "KEEP"
+
+  disable_services_on_destroy = false
+
+  activate_apis = [
+    "cloudbilling.googleapis.com",
+    "cloudresourcemanager.googleapis.com",
+    "cloudtrace.googleapis.com",
+    "compute.googleapis.com",
+    "dns.googleapis.com",
+    "iam.googleapis.com",
+    "networkconnectivity.googleapis.com",
+    "networkmanagement.googleapis.com",
+    "networkservices.googleapis.com",
+    "servicedirectory.googleapis.com",
+    "servicemanagement.googleapis.com",
+    "servicenetworking.googleapis.com",
+    "serviceusage.googleapis.com",
+  ]
+}
+
 data "google_organization" "org" {
   organization = var.org_id
 }
@@ -167,6 +199,6 @@ module "group" {
 module "hub" {
   source = "./harness/hub_network"
 
-  seed_project_id           = module.seed_project.project_id
+  seed_project_id           = module.hub_project.project_id
   auto_accept_projects_edge = [module.seed_project.project_id]
 }

@@ -17,7 +17,7 @@
 locals {
   initialIP = 26
   subnet_proxy_ranges_hub = { for i, region in var.regions :
-    (region) => "10.${local.initialIP + 1}.0.0/23"
+    (region) => "10.${local.initialIP + i}.6.0/23"
   }
 }
 
@@ -31,34 +31,36 @@ module "cluster_network" {
   vpc_name   = "vpc-eab-cluster"
   project_id = var.project_id
   region     = var.regions[0]
-  subnets = concat([for i, region in var.regions :
+  subnets = [for i, region in var.regions :
     {
       subnet_name           = "sb-h-vpc-eab-cluster-${region}"
       subnet_ip             = cidrsubnet(var.base_cidr, 8, i)
       subnet_region         = region
       subnet_private_access = true
     }
-    ], [for i, region in var.regions :
+  ]
+
+  proxy_subnets = [for i, region in var.regions :
     {
       subnet_name           = "sb-h-vpc-${region}-proxy"
-      subnet_ip             = "10.26.0.0/23"
+      subnet_ip             = local.subnet_proxy_ranges_hub[region]
       subnet_region         = region
       subnet_flow_logs      = false
       subnet_private_access = false
       description           = "Network proxy-only subnet for ${region}"
       role                  = "ACTIVE"
       purpose               = "REGIONAL_MANAGED_PROXY"
-  }])
+  }]
 
   secondary_ranges = {
     for i, region in var.regions :
-    "eab-cluster-net-${region}" => [
+    "sb-h-vpc-eab-cluster-${region}" => [
       {
-        range_name    = "eab-cluster-net-${region}-secondary-01"
+        range_name    = "sb-h-vpc-eab-cluster-${region}-secondary-01"
         ip_cidr_range = cidrsubnet(var.pods_base_cidr, 2, i)
       },
       {
-        range_name    = "eab-cluster-net-${region}-secondary-02"
+        range_name    = "sb-h-vpc-eab-cluster-${region}-secondary-02"
         ip_cidr_range = cidrsubnet(var.services_base_cidr, 2, i)
       },
     ]

@@ -52,7 +52,6 @@ module "spoke" {
 
   nat_config = var.nat_config
 
-  subnets          = var.subnets
+  subnets          = concat(var.subnets, var.proxy_subnets)
   secondary_ranges = var.secondary_ranges
-
 }

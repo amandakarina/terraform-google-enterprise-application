@@ -20,10 +20,14 @@ output "project_id" {
 }
 
 output "subnets_self_links" {
-  description = "Subnets self-links."
+  description = "Cluster subnets self-links."
   value       = module.spoke.subnets_self_links
 }
 
+output "subnets" {
+  description = "Cluster subnets."
+  value       = module.spoke.subnets
+}
 output "subnets_names" {
   description = "Subnets self-links."
   value       = module.spoke.subnets_names

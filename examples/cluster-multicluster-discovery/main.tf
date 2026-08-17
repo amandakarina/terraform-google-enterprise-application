@@ -33,7 +33,7 @@ module "multitenant_infra" {
   source = "../../modules/gke"
 
   apps                   = local.apps
-  cluster_subnetworks    = module.cluster_network.subnets_self_links
+  cluster_subnetworks    = [for i, sb in module.cluster_network.subnets : sb.self_link if !strcontains(i, "proxy")]
   network_project_id     = var.project_id
   env                    = local.env
   cluster_type           = "AUTOPILOT"
@@ -48,8 +48,6 @@ module "multitenant_infra" {
   deletion_protection    = false
 
   cb_private_workerpool_project_id = var.project_id
-
-  depends_on = [time_sleep.wait_for_perimeter_replication]
 }
 
 module "fleetscope_infra" {

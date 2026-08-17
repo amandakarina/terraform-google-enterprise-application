@@ -26,6 +26,7 @@ The Setup module creates the required prerequisite resources to deploy the bluep
 | cloud\_build\_sa | n/a |
 | hpc | n/a |
 | hub\_network\_name | The name of the VPC being created |
+| hub\_project\_id | The project ID of HUB network |
 | ncc\_hub\_uri | The NCC Hub ID |
 | org\_id | n/a |
 | sa\_email | n/a |

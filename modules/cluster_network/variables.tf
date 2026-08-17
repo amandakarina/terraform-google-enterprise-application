@@ -30,7 +30,12 @@ variable "region" {
 }
 
 variable "subnets" {
-  description = "Sub-networks to be created."
+  description = "Cluster Sub-networks to be created."
+  type        = any
+}
+
+variable "proxy_subnets" {
+  description = "Proxy Sub-networks to be created."
   type        = any
 }
 

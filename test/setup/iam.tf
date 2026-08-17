@@ -71,6 +71,14 @@ resource "google_project_iam_member" "int_test" {
   member  = "serviceAccount:${google_service_account.int_test.email}"
 }
 
+resource "google_project_iam_member" "hub_test" {
+  for_each = toset(local.int_required_roles)
+
+  project = module.hub_project.project_id
+  role    = each.value
+  member  = "serviceAccount:${google_service_account.int_test.email}"
+}
+
 resource "google_organization_iam_member" "organizationServiceAgent_role" {
   org_id = var.org_id
   role   = "roles/resourcemanager.organizationAdmin"
