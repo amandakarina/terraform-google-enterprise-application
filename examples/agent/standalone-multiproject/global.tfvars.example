@@ -1,0 +1,32 @@
+# ==============================================================================
+# Global Variables for Standalone Multi-project Capital Agent Deployment (EAB)
+# ==============================================================================
+
+# Projects Matrix
+bootstrap_project_id = "prj-platform-admin"
+network_project_id   = "prj-network-host"
+cluster_project_id   = "prj-platform-cluster"
+app_admin_project_id = "prj-app-admin"
+workload_project_id  = "prj-app-workload"
+
+# Regional Settings
+region   = "us-central1"
+location = "us-central1"
+env      = "development"
+
+# Network & Connectivity Center (NCC by default)
+vpc_name = "cap-agent-cluster"
+ncc_config = {
+  enable_ncc        = true
+  hub_uri           = "projects/prj-hub-network/locations/global/hubs/central-hub"
+  spoke_group       = "default"
+  spoke_name        = "vpc-spoke-agent"
+  spoke_description = "NCC Spoke for Capital Agent cluster network"
+}
+
+# Cluster Configuration
+cluster_type   = "AUTOPILOT"
+cluster_prefix = "ag"
+teams = {
+  "capital-agent" = {}
+}

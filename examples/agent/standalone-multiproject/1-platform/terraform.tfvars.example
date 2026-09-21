@@ -1,0 +1,18 @@
+network_project_id = "prj-network-host"
+cluster_project_id = "prj-platform-cluster"
+region             = "us-central1"
+env                = "development"
+cluster_type       = "AUTOPILOT"
+vpc_name           = "cap-agent-cluster"
+
+teams = {
+  "capital-agent" = {}
+}
+
+ncc_config = {
+  enable_ncc        = true
+  hub_uri           = "projects/prj-hub-network/locations/global/hubs/central-hub"
+  spoke_group       = "default"
+  spoke_name        = "vpc-spoke-agent"
+  spoke_description = "NCC Spoke for Capital Agent cluster network"
+}

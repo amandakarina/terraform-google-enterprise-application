@@ -63,6 +63,7 @@ resource "google_cloudbuild_trigger" "ci" {
 }
 
 resource "google_project_iam_member" "pool_user" {
+  count   = local.worker_pool_project != null ? 1 : 0
   project = local.worker_pool_project
   role    = "roles/cloudbuild.workerPoolUser"
   member  = "serviceAccount:${data.google_project.project.number}@cloudbuild.gserviceaccount.com"

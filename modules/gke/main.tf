@@ -130,7 +130,7 @@ module "eab_cluster_project" {
 }
 
 data "google_project" "eab_cluster_project" {
-  project_id = var.create_cluster_project ? module.eab_cluster_project[0].project_id : var.network_project_id
+  project_id = var.create_cluster_project ? module.eab_cluster_project[0].project_id : (var.cluster_project_id != null ? var.cluster_project_id : var.network_project_id)
 }
 
 // Create Cloud Armor policy

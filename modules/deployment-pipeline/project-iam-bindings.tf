@@ -117,12 +117,12 @@ resource "google_project_iam_member" "container_admin" {
 }
 
 resource "google_project_iam_member" "cloudbuild_service_account" {
-  for_each = {
+  for_each = local.worker_pool_project != null ? {
     "cloud_deploy"     = google_service_account.cloud_deploy.member,
     "cloud_build"      = google_service_account.cloud_build.member,
     "cb_service_agent" = google_project_service_identity.cloudbuild_service_identity.member,
     "cd_service_agent" = google_project_service_identity.cloud_deploy_sa.member,
-  }
+  } : {}
   project = local.worker_pool_project
   role    = "roles/cloudbuild.builds.builder"
 
@@ -130,12 +130,12 @@ resource "google_project_iam_member" "cloudbuild_service_account" {
 }
 
 resource "google_project_iam_member" "logging_writer" {
-  for_each = {
+  for_each = local.worker_pool_project != null ? {
     "cloud_deploy"     = google_service_account.cloud_deploy.member,
     "cloud_build"      = google_service_account.cloud_build.member,
     "service_agent"    = google_project_service_identity.cloudbuild_service_identity.member,
     "cd_service_agent" = google_project_service_identity.cloud_deploy_sa.member,
-  }
+  } : {}
   project = local.worker_pool_project
   role    = "roles/logging.logWriter"
 
@@ -207,6 +207,7 @@ resource "google_kms_crypto_key_iam_member" "attestor_crypto_key" {
 }
 
 resource "google_artifact_registry_repository_iam_member" "builder_on_attestation_repo" {
+  count      = var.binary_authorization_repository_id != null ? 1 : 0
   project    = regex("projects/([^/]*)/", var.binary_authorization_repository_id)[0]
   location   = regex("locations/([^/]*)/", var.binary_authorization_repository_id)[0]
   repository = regex("repositories/([^/]*)", var.binary_authorization_repository_id)[0]
@@ -215,6 +216,7 @@ resource "google_artifact_registry_repository_iam_member" "builder_on_attestatio
 }
 
 resource "google_artifact_registry_repository_iam_member" "service_agent_on_attestation_repo" {
+  count      = var.binary_authorization_repository_id != null ? 1 : 0
   project    = regex("projects/([^/]*)/", var.binary_authorization_repository_id)[0]
   location   = regex("locations/([^/]*)/", var.binary_authorization_repository_id)[0]
   repository = regex("repositories/([^/]*)", var.binary_authorization_repository_id)[0]

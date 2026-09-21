@@ -59,6 +59,16 @@ output "app_cloudbuild_workspace_cloudbuild_sa_email" {
   value       = module.tf_cloudbuild_workspace.cloudbuild_sa
 }
 
+output "cloudbuild_sa" {
+  description = "Convenience shorthand output for CloudBuild SA email."
+  value       = module.tf_cloudbuild_workspace.cloudbuild_sa
+}
+
+output "artifact_registry_repository_id" {
+  description = "Convenience shorthand output for Artifact Registry repository name."
+  value       = local.gar_repo_name
+}
+
 output "app_infra_project_ids" {
   description = "Application environment projects IDs."
   value       = { for key, value in module.app_infra_project : key => value.project_id }

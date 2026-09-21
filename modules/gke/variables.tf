@@ -22,11 +22,13 @@ variable "env" {
 variable "org_id" {
   description = "Organization ID"
   type        = string
+  default     = null
 }
 
 variable "folder_id" {
   description = "Folder ID"
   type        = string
+  default     = null
 }
 
 variable "cluster_prefix" {
@@ -41,7 +43,7 @@ variable "cluster_prefix" {
 }
 
 variable "create_cluster_project" {
-  description = "Create Cluster Project ID, otherwise the Network Project ID is used"
+  description = "Create Cluster Project ID, otherwise the Network Project ID or Cluster Project ID is used"
   type        = bool
   default     = true
 }
@@ -51,9 +53,16 @@ variable "network_project_id" {
   type        = string
 }
 
+variable "cluster_project_id" {
+  description = "Cluster Project ID when create_cluster_project is false"
+  type        = string
+  default     = null
+}
+
 variable "billing_account" {
   description = "The billing account id associated with the project, e.g. XXXXXX-YYYYYY-ZZZZZZ"
   type        = string
+  default     = null
 }
 
 variable "cluster_subnetworks" {

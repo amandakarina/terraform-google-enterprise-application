@@ -15,7 +15,7 @@
  */
 
 resource "google_project_iam_member" "fleet_logging_viewaccessor" {
-  for_each = var.namespace_ids
+  for_each = { for k, v in var.namespace_ids : k => v if v != "" && v != null }
 
   project = var.fleet_project_id
   role    = "roles/logging.viewAccessor"
