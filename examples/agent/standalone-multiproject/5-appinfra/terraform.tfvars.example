@@ -1,0 +1,31 @@
+app_admin_project_id = "prj-app-admin"
+workload_project_id  = "prj-app-workload"
+cluster_project_id   = "prj-platform-cluster"
+region               = "us-central1"
+env                  = "development"
+
+# Outputs from the 1-platform stage:
+cluster_membership_ids = [
+  "projects/prj-platform-cluster/locations/us-central1/memberships/cluster-us-central1-development"
+]
+
+cluster_service_accounts = [
+  "ag-sa-gke-node@prj-platform-cluster.iam.gserviceaccount.com"
+]
+
+cloudbuildv2_repository_config = {
+  repo_type = "GITLABv2"
+  repositories = {
+    capital-agent = {
+      repository_name = "eab-agent-capital-agent"
+      repository_url  = "https://gitlab.com/user/eab-agent-capital-agent.git"
+    }
+  }
+  gitlab_authorizer_credential_secret_id      = "projects/PROJECT_NUMBER/secrets/gitlab-pat"
+  gitlab_read_authorizer_credential_secret_id = "projects/PROJECT_NUMBER/secrets/gitlab-pat"
+  gitlab_webhook_secret_id                    = "projects/PROJECT_NUMBER/secrets/gitlab-webhook"
+  gitlab_enterprise_host_uri                  = "https://gitlab.com"
+  gitlab_enterprise_service_directory         = "projects/PROJECT_NUMBER/locations/us-central1/namespaces/gitlab/services/gitlab"
+  gitlab_enterprise_ca_certificate            = "REPLACE_WITH_SSL_CERT"
+  secret_project_id                           = "prj-app-admin"
+}

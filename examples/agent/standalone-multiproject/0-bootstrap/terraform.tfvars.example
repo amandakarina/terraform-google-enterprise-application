@@ -1,0 +1,21 @@
+bootstrap_project_id = "prj-platform-admin"
+network_project_id   = "prj-network-host"
+cluster_project_id   = "prj-platform-cluster"
+region               = "us-central1"
+
+cloudbuildv2_repository_config = {
+  repo_type = "GITLABv2"
+  repositories = {
+    platform-infra = {
+      repository_name = "eab-platform-infra"
+      repository_url  = "https://gitlab.com/user/eab-platform-infra.git"
+    }
+  }
+  gitlab_authorizer_credential_secret_id      = "projects/PROJECT_NUMBER/secrets/gitlab-pat"
+  gitlab_read_authorizer_credential_secret_id = "projects/PROJECT_NUMBER/secrets/gitlab-pat"
+  gitlab_webhook_secret_id                    = "projects/PROJECT_NUMBER/secrets/gitlab-webhook"
+  gitlab_enterprise_host_uri                  = "https://gitlab.com"
+  gitlab_enterprise_service_directory         = "projects/PROJECT_NUMBER/locations/us-central1/namespaces/gitlab/services/gitlab"
+  gitlab_enterprise_ca_certificate            = "REPLACE_WITH_SSL_CERT"
+  secret_project_id                           = "prj-platform-admin"
+}

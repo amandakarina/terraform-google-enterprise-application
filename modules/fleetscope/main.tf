@@ -64,7 +64,7 @@ module "fleet_app_operator_permissions" {
   source  = "terraform-google-modules/kubernetes-engine/google//modules/fleet-app-operator-permissions"
   version = "~> 44.1"
 
-  for_each = var.namespace_ids
+  for_each = { for k, v in var.namespace_ids : k => v if v != "" && v != null }
 
   fleet_project_id = var.fleet_project_id
   scope_id         = google_gke_hub_scope.fleet-scope[each.key].scope_id

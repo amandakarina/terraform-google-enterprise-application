@@ -1,5 +1,5 @@
 /**
- * Copyright 2025 Google LLC
+ * Copyright 2026 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,16 @@
  */
 
 terraform {
-  backend "gcs" {
-    bucket = "UPDATE_INFRA_REPO_STATE"
-    prefix = "terraform/appinfra/agents/capital-agent/shared"
+  required_version = ">= 1.6"
+
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = ">= 5.0, < 8"
+    }
+    google-beta = {
+      source  = "hashicorp/google-beta"
+      version = ">= 5.0, < 8"
+    }
   }
 }

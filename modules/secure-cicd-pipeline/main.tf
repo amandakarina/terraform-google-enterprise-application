@@ -16,10 +16,14 @@
 
 locals {
   admin_project_id = var.create_admin_project ? module.app_admin_project[0].project_id : var.admin_project_id
-  org_ids          = distinct([for env in var.envs : env.org_id])
+  gar_project_id   = var.gar_project_id != null ? var.gar_project_id : local.admin_project_id
+  gar_repo_name    = var.gar_repository_name != null ? var.gar_repository_name : "${var.acronym}-${var.service_name}-build"
+
+  org_ids = distinct([for env in var.envs : env.org_id if env.org_id != null && env.org_id != "" && env.org_id != "dummy"])
+
   cloudbuild_sa_roles = merge(var.create_infra_project ? { for env in keys(var.envs) : env => {
     project_id = module.app_infra_project[env].project_id
-    roles      = var.cloudbuild_sa_roles[env].roles
+    roles      = try(var.cloudbuild_sa_roles[env].roles, [])
     } } : {}, {
     "admin" : {
       project_id = local.admin_project_id
@@ -38,7 +42,7 @@ locals {
         roles = [
           "roles/resourcemanager.projectIamAdmin",
           "roles/gkehub.admin",
-          "roles/modelarmor.admin", //permission to create model armor template
+          "roles/modelarmor.admin",
           "roles/iam.serviceAccountAdmin",
           "roles/container.admin"
         ]
@@ -46,12 +50,13 @@ locals {
     }
   )
 
-  use_csr             = var.cloudbuildv2_repository_config.repo_type == "CSR"
-  service_repo_name   = var.cloudbuildv2_repository_config.repositories[var.service_name].repository_name
-  worker_pool_project = element(split("/", var.workerpool_id), index(split("/", var.workerpool_id), "projects") + 1, )
+  use_csr                 = var.cloudbuildv2_repository_config.repo_type == "CSR"
+  service_repo_name       = var.cloudbuildv2_repository_config.repositories[var.service_name].repository_name
+  worker_pool_project     = var.workerpool_id != null ? element(split("/", var.workerpool_id), index(split("/", var.workerpool_id), "projects") + 1) : local.admin_project_id
+  remote_state_project_id = var.remote_state_project_id != null ? var.remote_state_project_id : local.admin_project_id
 
   secret_id             = !local.use_csr && var.cloudbuildv2_repository_config.github_secret_id != null ? var.cloudbuildv2_repository_config.github_secret_id : var.cloudbuildv2_repository_config.gitlab_authorizer_credential_secret_id
-  secret_project_number = !local.use_csr ? regex("projects/([^/]*)/", local.secret_id)[0] : null
+  secret_project_number = !local.use_csr && local.secret_id != null ? regex("projects/([^/]*)/", local.secret_id)[0] : null
 }
 
 data "google_project" "admin_project" {
@@ -63,7 +68,7 @@ data "google_project" "workerpool_project" {
 }
 
 data "google_project" "remote_state_project" {
-  project_id = var.remote_state_project_id
+  project_id = local.remote_state_project_id
 }
 
 data "google_project" "kms_project" {
@@ -77,7 +82,7 @@ data "google_project" "clusters_projects" {
 }
 
 data "google_project" "vpc_projects" {
-  for_each   = var.envs
+  for_each   = { for k, v in var.envs : k => v if v.network_project_id != null && v.network_project_id != "" && v.network_project_id != "dummy" }
   project_id = each.value.network_project_id
 }
 
@@ -126,7 +131,7 @@ module "app_admin_project" {
   random_project_id        = true
   random_project_id_length = 4
   billing_account          = var.billing_account
-  name                     = substr("${var.acronym}-${var.service_name}-admin", 0, 25) # max length 30 chars
+  name                     = substr("${var.acronym}-${var.service_name}-admin", 0, 25)
   org_id                   = var.org_id
   folder_id                = var.folder_id
   deletion_policy          = "DELETE"
@@ -192,7 +197,6 @@ resource "google_project_service_identity" "cloudbuild_service_identity" {
 }
 
 resource "google_sourcerepo_repository" "app_infra_repo" {
-  // conditionally create the cloud source repo if the user did not define a cloud build 2nd gen repository.
   count = local.use_csr ? 1 : 0
 
   project                      = local.admin_project_id
@@ -217,10 +221,10 @@ module "tf_cloudbuild_workspace" {
 
   substitutions = merge({
     "_GAR_REGION"                   = var.location
-    "_GAR_PROJECT_ID"               = var.gar_project_id
-    "_GAR_REPOSITORY"               = var.gar_repository_name
+    "_GAR_PROJECT_ID"               = local.gar_project_id
+    "_GAR_REPOSITORY"               = local.gar_repo_name
     "_DOCKER_TAG_VERSION_TERRAFORM" = var.docker_tag_version_terraform
-    "_PRIVATE_POOL"                 = var.workerpool_id
+    "_PRIVATE_POOL"                 = var.workerpool_id != null ? var.workerpool_id : ""
   })
 
   cloudbuild_plan_filename  = "cloudbuild-tf-plan.yaml"
@@ -231,24 +235,28 @@ module "tf_cloudbuild_workspace" {
 }
 
 resource "google_project_iam_member" "worker_pool_builder_logging_writer" {
+  count   = var.workerpool_id != null ? 1 : 0
   member  = "serviceAccount:${reverse(split("/", module.tf_cloudbuild_workspace.cloudbuild_sa))[0]}"
   project = local.worker_pool_project
   role    = "roles/logging.logWriter"
 }
 
 resource "google_project_iam_member" "worker_pool_roles_project_iam_admin" {
+  count   = var.workerpool_id != null ? 1 : 0
   member  = "serviceAccount:${reverse(split("/", module.tf_cloudbuild_workspace.cloudbuild_sa))[0]}"
   project = local.worker_pool_project
   role    = "roles/resourcemanager.projectIamAdmin"
 }
 
 resource "google_project_iam_member" "cloud_build_builder" {
+  count   = var.workerpool_id != null ? 1 : 0
   member  = "serviceAccount:${reverse(split("/", module.tf_cloudbuild_workspace.cloudbuild_sa))[0]}"
   project = local.worker_pool_project
   role    = "roles/cloudbuild.builds.builder"
 }
 
 resource "google_project_iam_member" "workerPoolUser_cb_sa" {
+  count   = var.workerpool_id != null ? 1 : 0
   member  = "serviceAccount:${reverse(split("/", module.tf_cloudbuild_workspace.cloudbuild_sa))[0]}"
   project = local.worker_pool_project
   role    = "roles/cloudbuild.workerPoolUser"
@@ -261,12 +269,14 @@ resource "google_project_iam_member" "connection_admin_cb_sa" {
 }
 
 resource "google_project_iam_member" "log_writer_cb_si" {
+  count   = var.workerpool_id != null ? 1 : 0
   member  = "serviceAccount:${data.google_project.admin_project.number}@cloudbuild.gserviceaccount.com"
   project = local.worker_pool_project
   role    = "roles/logging.logWriter"
 }
 
 resource "google_project_iam_member" "service_agent_cb_si" {
+  count   = var.workerpool_id != null ? 1 : 0
   member  = "serviceAccount:${data.google_project.admin_project.number}@cloudbuild.gserviceaccount.com"
   project = local.worker_pool_project
   role    = "roles/cloudbuild.builds.builder"
@@ -276,7 +286,7 @@ resource "google_project_iam_member" "cloud_build_sa_roles" {
   for_each = toset(["roles/storage.objectUser", "roles/artifactregistry.reader", "roles/artifactregistry.admin"])
 
   member  = "serviceAccount:${reverse(split("/", module.tf_cloudbuild_workspace.cloudbuild_sa))[0]}"
-  project = var.gar_project_id
+  project = local.gar_project_id
   role    = each.value
 }
 
@@ -284,7 +294,7 @@ resource "google_project_iam_member" "cloud_build_identity_roles" {
   for_each = toset(["roles/storage.objectUser", "roles/artifactregistry.reader"])
 
   member  = google_project_service_identity.cloudbuild_service_identity.member
-  project = var.gar_project_id
+  project = local.gar_project_id
   role    = each.value
 }
 
@@ -304,10 +314,10 @@ module "app_infra_project" {
 
   random_project_id        = true
   random_project_id_length = 4
-  billing_account          = each.value.billing_account
-  name                     = substr("eab-${var.acronym}-${var.service_name}-${each.key}", 0, 25) # max length 30 chars
-  org_id                   = each.value.org_id
-  folder_id                = each.value.folder_id
+  billing_account          = each.value.billing_account != null ? each.value.billing_account : var.billing_account
+  name                     = substr("eab-${var.acronym}-${var.service_name}-${each.key}", 0, 25)
+  org_id                   = each.value.org_id != null ? each.value.org_id : var.org_id
+  folder_id                = each.value.folder_id != null ? each.value.folder_id : var.folder_id
   activate_apis            = var.infra_project_apis
   deletion_policy          = "DELETE"
   default_service_account  = "KEEP"
@@ -318,9 +328,8 @@ module "app_infra_project" {
   vpc_service_control_attach_enabled = var.service_perimeter_name != null && var.service_perimeter_mode == "ENFORCE"
   vpc_service_control_perimeter_name = var.service_perimeter_name
 
-  svpc_host_project_id = each.value.network_project_id
+  svpc_host_project_id = try(each.value.network_project_id, null) != null ? each.value.network_project_id : ""
 }
-
 
 data "google_storage_project_service_account" "gcs_account" {
   for_each = var.create_infra_project && var.kms_project_id != null && contains(var.infra_project_apis, "storage.googleapis.com") ? module.app_infra_project : {}
@@ -356,7 +365,7 @@ resource "google_project_iam_member" "attestorsAdmin" {
 }
 
 resource "google_organization_iam_member" "policyAdmin_role" {
-  for_each = toset(local.org_ids)
+  for_each = var.service_perimeter_name != null && var.service_perimeter_mode == "ENFORCE" ? toset(local.org_ids) : []
   member   = "serviceAccount:${reverse(split("/", module.tf_cloudbuild_workspace.cloudbuild_sa))[0]}"
   org_id   = each.value
   role     = "roles/accesscontextmanager.policyAdmin"

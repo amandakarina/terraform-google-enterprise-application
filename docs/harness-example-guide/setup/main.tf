@@ -33,14 +33,16 @@ module "seed_project" {
   source  = "terraform-google-modules/project-factory/google"
   version = "~> 18.0"
 
-  name                     = "ci-eab-seed"
-  random_project_id        = "true"
-  random_project_id_length = 4
-  org_id                   = var.org_id
-  folder_id                = module.folder_seed.id
-  billing_account          = var.billing_account
-  deletion_policy          = var.project_deletion_policy
-  default_service_account  = "KEEP"
+  name                        = "ci-eab-seed"
+  random_project_id           = "true"
+  random_project_id_length    = 4
+  org_id                      = var.org_id
+  folder_id                   = module.folder_seed.id
+  billing_account             = var.billing_account
+  deletion_policy             = var.project_deletion_policy
+  default_service_account     = "KEEP"
+  disable_services_on_destroy = false
+  disable_dependent_services  = false
 
   activate_apis = [
     "accesscontextmanager.googleapis.com",

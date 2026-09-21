@@ -32,28 +32,32 @@ variable "acronym" {
 variable "org_id" {
   type        = string
   description = "Google Cloud Organization ID."
+  default     = null
 }
 
 variable "folder_id" {
   type        = string
   description = "Folder ID of parent folder for application admin resources. If deploying on the enterprise foundation blueprint, this is usually the 'common' folder."
+  default     = null
 }
 
 variable "billing_account" {
   type        = string
   description = "Billing Account ID for application admin project resources."
+  default     = null
 }
 
 variable "envs" {
   type = map(object({
-    billing_account    = string
-    folder_id          = string
-    network_project_id = string
-    network_self_link  = string
-    org_id             = string
-    subnets_self_links = list(string)
+    billing_account    = optional(string)
+    folder_id          = optional(string)
+    network_project_id = optional(string)
+    network_self_link  = optional(string, "")
+    org_id             = optional(string)
+    subnets_self_links = optional(list(string), [])
   }))
-  description = "Environments"
+  description = "Environments configuration map."
+  default     = {}
 }
 
 variable "infra_project_apis" {
@@ -70,6 +74,7 @@ variable "infra_project_apis" {
 variable "cluster_projects_ids" {
   type        = list(string)
   description = "Cluster projects ids."
+  default     = []
 }
 
 variable "cloudbuild_sa_roles" {
@@ -113,11 +118,13 @@ variable "tf_apply_branches" {
 variable "gar_project_id" {
   description = "Project ID where the Artifact Registry Repository that Hosts the infrastructure pipeline docker image is located."
   type        = string
+  default     = null
 }
 
 variable "gar_repository_name" {
   description = "Artifact Registry repository name where the Docker image for the infrastructure pipeline is stored."
   type        = string
+  default     = null
 }
 
 variable "docker_tag_version_terraform" {
@@ -129,21 +136,25 @@ variable "docker_tag_version_terraform" {
 variable "admin_project_id" {
   description = "The admin project id associated with the microservice. This project will host resources like microservice CI/CD pipelines. If set, `create_admin_project` must be set to `false`."
   type        = string
+  default     = null
 }
 
 variable "remote_state_project_id" {
   description = "The project id where remote state are stored. It will be used to allow egress from VPC-SC if is being used."
   type        = string
+  default     = null
 }
 
 variable "create_infra_project" {
   description = "Boolean value that indicates whether an infrastructure project should be created for the microservice."
   type        = bool
+  default     = false
 }
 
 variable "create_admin_project" {
   description = "Boolean value that indicates whether a admin project should be created for the microservice."
   type        = bool
+  default     = false
 }
 
 variable "cloudbuildv2_repository_config" {
@@ -238,11 +249,12 @@ variable "kms_project_id" {
 }
 
 variable "service_perimeter_mode" {
-  description = "(VPC-SC) Service perimeter mode: ENFORCE, DRY_RUN."
+  description = "(VPC-SC) Service perimeter mode: ENFORCE, DRY_RUN, OFF."
   type        = string
+  default     = "OFF"
 
   validation {
-    condition     = contains(["ENFORCE", "DRY_RUN"], var.service_perimeter_mode)
-    error_message = "The service_perimeter_mode value must be one of: ENFORCE, DRY_RUN."
+    condition     = contains(["ENFORCE", "DRY_RUN", "OFF"], var.service_perimeter_mode)
+    error_message = "The service_perimeter_mode value must be one of: ENFORCE, DRY_RUN, OFF."
   }
 }
