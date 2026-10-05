@@ -19,17 +19,12 @@ package mortgage
 
 import (
 	"fmt"
-	"net"
 	"os"
-	"regexp"
-	"slices"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/GoogleCloudPlatform/cloud-foundation-toolkit/infra/blueprint-test/pkg/gcloud"
 	"github.com/GoogleCloudPlatform/cloud-foundation-toolkit/infra/blueprint-test/pkg/tft"
-	"github.com/GoogleCloudPlatform/cloud-foundation-toolkit/infra/blueprint-test/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/tidwall/gjson"
 
@@ -85,138 +80,74 @@ func TestStandaloneSingleProjectMortgage(t *testing.T) {
 	// define and write a custom verifier for this test case call the default verify for confirming no additional changes
 	standaloneSingleProjT.DefineVerify(func(assert *assert.Assertions) {
 		standaloneSingleProjT.DefaultVerify(assert)
-		clusterMembershipIds := testutils.GetBptOutputStrSlice(standaloneSingleProjT, "cluster_membership_ids")
-		clusterType := standaloneSingleProjT.GetStringOutput("cluster_type")
-		clusterProjectNumber := standaloneSingleProjT.GetStringOutput("cluster_project_number")
 		clusterRegions := testutils.GetBptOutputStrSlice(standaloneSingleProjT, "cluster_regions")
 		envName := standaloneSingleProjT.GetStringOutput("env")
-		listMonitoringEnabledComponents := []string{
-			"SYSTEM_COMPONENTS",
-			"DEPLOYMENT",
+		gkeAgentEmail := standaloneSingleProjT.GetStringOutput("gke_agent_sa_email")
+		region := clusterRegions[0]
+
+		// artifact registry repository
+		arOp := gcloud.Runf(t, "artifacts repositories describe %s --location %s --project %s", "mcp-docker", region, projectID)
+		assert.Equal("DOCKER", arOp.Get("format").String(), "MCP Artifact Registry format should be DOCKER")
+
+		// cloud storage bucket for MCP builds
+		cloudbuildBucket := standaloneSingleProjT.GetStringOutput("cloudbuild_bucket")
+		assert.Equal(fmt.Sprintf("%s-mcp-cloudbuild", projectID), cloudbuildBucket, "MCP Cloud Build bucket name should match convention")
+		storageBucketOp := gcloud.Runf(t, "storage buckets describe gs://%s --format=json", cloudbuildBucket)
+		assert.True(storageBucketOp.Exists(), fmt.Sprintf("MCP Cloud Build bucket %s should exist", cloudbuildBucket))
+
+		// MCP invoker service account and token creator binding
+		invokerEmail := standaloneSingleProjT.GetStringOutput("agent_mcp_invoker_email")
+		assert.Equal(fmt.Sprintf("agent-mcp-invoker@%s.iam.gserviceaccount.com", projectID), invokerEmail, "MCP invoker SA email should match expected format")
+
+		invokerIamOp := gcloud.Runf(t, "iam service-accounts get-iam-policy %s --project %s", invokerEmail, projectID)
+		assert.Contains(invokerIamOp.String(), gkeAgentEmail, "GKE agent SA should have tokenCreator role on MCP invoker SA")
+
+		// MCP runtime service accounts and Cloud Run services
+		mcpServices := []struct {
+			Name      string
+			AccountID string
+		}{
+			{Name: "legacy-dms", AccountID: "mcp-legacy-dms"},
+			{Name: "corporate-email", AccountID: "mcp-corporate-email"},
+			{Name: "income-verification", AccountID: "mcp-income-verification"},
 		}
 
-		for _, id := range clusterMembershipIds {
-			// Membership details
-			membershipOp := gcloud.Runf(t, "container fleet memberships describe %s", strings.TrimPrefix(id, "//gkehub.googleapis.com/"))
-			// Cluster details
-			clusterLocation := regexp.MustCompile(`\/locations\/([^\/]*)\/`).FindStringSubmatch(membershipOp.Get("endpoint.gkeCluster.resourceLink").String())[1]
-			clusterName := regexp.MustCompile(`\/clusters\/([^\/]*)$`).FindStringSubmatch(membershipOp.Get("endpoint.gkeCluster.resourceLink").String())[1]
-			clusterOp := gcloud.Runf(t, "container clusters describe %s --location %s --project %s", clusterName, clusterLocation, projectID)
+		for _, svc := range mcpServices {
+			// cloud run Service
+			svcOp := gcloud.Runf(t, "run services describe %s --project %s --region %s", svc.Name, projectID, region)
+			assert.Equal(svc.Name, svcOp.Get("metadata.name").String(), fmt.Sprintf("Cloud Run service %s should exist", svc.Name))
 
-			// Extract enablePrivateEndpoint flag value
-			enablePrivateEndpoint := clusterOp.Get("privateClusterConfig.enablePrivateEndpoint").Bool()
-			assert.True(enablePrivateEndpoint, "The cluster external endpoint must be private.")
+			// service account assigned to Cloud Run
+			expectedRuntimeSA := fmt.Sprintf("%s@%s.iam.gserviceaccount.com", svc.AccountID, projectID)
+			assert.Equal(expectedRuntimeSA, svcOp.Get("spec.template.spec.serviceAccountName").String(), fmt.Sprintf("Cloud Run service %s should use runtime SA %s", svc.Name, expectedRuntimeSA))
 
-			// Validate if all nodes inside node pool does not contain an external NAT IP address
-			nodePoolName := clusterOp.Get("nodePools.0.name").String()
-			nodeInstances := gcloud.Runf(t, "compute instances list --filter=\"labels.goog-k8s-node-pool-name=%s\" --project=%s", nodePoolName, projectID).Array()
-			for _, node := range nodeInstances {
-				// retrieve all node network interfaces
-				nics := node.Get("networkInterfaces")
-				// for each network interface, verify if it using an external natIP
-				nics.ForEach((func(key, value gjson.Result) bool {
-					assert.Equal(net.IP(nil), net.ParseIP(value.Get("accessConfigs.0.natIP").String()), "The nodes inside the nodepool should not have external ip addresses.")
-					return true // keep iterating
-				}))
-			}
-			// NodePools
-			switch clusterType {
-			case "STANDARD":
-				assert.Equal("node-pool-1", clusterOp.Get("nodePools.0.name").String(), "NodePool name should be node-pool-1")
-				assert.Equal("SURGE", clusterOp.Get("nodePools.0.upgradeSettings.strategy").String(), "NodePool strategy should SURGE")
-				assert.Equal("1", clusterOp.Get("nodePools.0.upgradeSettings.maxSurge").String(), "NodePool max surge should be 1")
-				assert.Equal("BALANCED", clusterOp.Get("nodePools.0.autoscaling.locationPolicy").String(), "NodePool auto scaling location prolicy should be BALANCED")
-				assert.True(clusterOp.Get("nodePools.0.autoscaling.enabled").Bool(), "NodePool auto scaling should be enabled (true)")
-			case "STANDARD-NAP":
-				for _, pool := range clusterOp.Get("nodePools").Array() {
-					if pool.Get("name").String() == "node-pool-1" {
-						assert.False(pool.Get("autoscaling.autoprovisioned").Bool(), "NodePool autoscaling autoprovisioned should disabled(false)")
-					} else if regexp.MustCompile(`^nap-.*`).FindString(pool.Get("name").String()) != "" {
-						assert.True(pool.Get("autoscaling.autoprovisioned").Bool(), "NodePool autoscaling autoprovisioned should enabled(true)")
-					} else {
-						if pool.Get("name").String() != "arm-node-pool" {
-							t.Fatalf("Error: unknown node pool: %s", pool.Get("name").String())
-						}
-					}
-					// common to all valid node pools
-					assert.True(pool.Get("autoscaling.enabled").Bool(), "NodePool auto scaling should be enabled (true)")
-					assert.Equal("SURGE", pool.Get("upgradeSettings.strategy").String(), "NodePool strategy should SURGE")
-					assert.Equal("1", pool.Get("upgradeSettings.maxSurge").String(), "NodePool max surge should be 1")
-					assert.Equal("BALANCED", pool.Get("autoscaling.locationPolicy").String(), "NodePool auto scaling location prolicy should be BALANCED")
-				}
-			case "AUTOPILOT":
-				// Autopilot manages all nodepools
-			default:
-				t.Fatalf("Error: unknown cluster type: %s", clusterType)
-			}
-			// Cluster
-			assert.Equal(projectID, clusterOp.Get("fleet.project").String(), fmt.Sprintf("Cluster %s Fleet Project should be %s", id, projectID))
-			clusterEnabledComponents := utils.GetResultStrSlice(clusterOp.Get("monitoringConfig.componentConfig.enableComponents").Array())
-			if clusterType != "AUTOPILOT" {
-				assert.Equal(listMonitoringEnabledComponents, clusterEnabledComponents, fmt.Sprintf("Cluster %s should have Monitoring Enabled Components: SYSTEM_COMPONENTS and DEPLOYMENT", id))
-			}
-			assert.True(clusterOp.Get("monitoringConfig.managedPrometheusConfig.enabled").Bool(), fmt.Sprintf("Cluster %s should have Managed Prometheus Config equals True", id))
-			assert.Equal(fmt.Sprintf("%s.svc.id.goog", projectID), clusterOp.Get("workloadIdentityConfig.workloadPool").String(), fmt.Sprintf("Cluster %s workloadPool should be %s.svc.id.goog", id, projectID))
-			assert.Equal(fmt.Sprintf("%s.svc.id.goog", projectID), membershipOp.Get("authority.workloadIdentityPool").String(), fmt.Sprintf("Membership %s workloadIdentityPool should be %s.svc.id.goog", id, projectID))
-			assert.Equal("PROJECT_SINGLETON_POLICY_ENFORCE", clusterOp.Get("binaryAuthorization.evaluationMode").String(), fmt.Sprintf("Cluster %s Binary Authorization Evaluation Mode should be PROJECT_SINGLETON_POLICY_ENFORCE", id))
-
+			// invoker IAM binding on cloud run service
+			svcIamOp := gcloud.Runf(t, "run services get-iam-policy %s --project %s --region %s", svc.Name, projectID, region)
+			assert.Contains(svcIamOp.String(), invokerEmail, fmt.Sprintf("Invoker SA should have roles/run.invoker on Cloud Run service %s", svc.Name))
 		}
 
-		// Service Identity
-		fleetProjectNumber := gcloud.Runf(t, "projects describe %s", projectID).Get("projectNumber").String()
-		gkeServiceAgent := fmt.Sprintf("service-%s@gcp-sa-gkehub.iam.gserviceaccount.com", fleetProjectNumber)
-		gkeSaRoles := []string{"roles/gkehub.serviceAgent"}
+		// MCP Discovered Servers JSON output
+		mcpDiscoveredJSON := standaloneSingleProjT.GetStringOutput("mcp_discovered_servers_json")
+		assert.NotEmpty(mcpDiscoveredJSON, "mcp_discovered_servers_json output should not be empty")
+		parsedJSON := gjson.Parse(mcpDiscoveredJSON)
+		assert.Equal(int64(len(mcpServices)), parsedJSON.Get("#").Int(), fmt.Sprintf("mcp_discovered_servers_json should contain %d services", len(mcpServices)))
 
-		gkeIamFilter := fmt.Sprintf("bindings.members:'serviceAccount:%s'", gkeServiceAgent)
-		gkeIamCommonArgs := gcloud.WithCommonArgs([]string{"--flatten", "bindings", "--filter", gkeIamFilter, "--format", "json"})
-		gkeProjectPolicyOp := gcloud.Run(t, fmt.Sprintf("projects get-iam-policy %s", projectID), gkeIamCommonArgs).Array()
-		gkeSaListRoles := testutils.GetResultFieldStrSlice(gkeProjectPolicyOp, "bindings.role")
-		assert.Subset(gkeSaListRoles, gkeSaRoles, fmt.Sprintf("service account %s should have project level roles", gkeServiceAgent))
+		// GSA mortgage agent Service Account, IAM roles and Workload Identity binding
+		expectedGsaEmail := fmt.Sprintf("gsa-mortgage-agent@%s.iam.gserviceaccount.com", projectID)
+		assert.Equal(expectedGsaEmail, gkeAgentEmail, "GSA mortgage agent email should match expected format")
 
-		// Cloud Armor
-		cloudArmorName := "mt-eab-cloud-armor"
-		cloudArmorOp := gcloud.Run(t, fmt.Sprintf("compute security-policies describe %s --project %s --format json", cloudArmorName, projectID)).Array()[0]
-		assert.Equal(cloudArmorOp.Get("description").String(), "EAB Cloud Armor policy", "Cloud Armor description should be EAB Cloud Armor policy.")
+		// project IAM roles for GSA (roles/aiplatform.user, roles/cloudtrace.agent)
+		gsaIamFilter := fmt.Sprintf("bindings.members:'serviceAccount:%s'", gkeAgentEmail)
+		gsaIamCommonArgs := gcloud.WithCommonArgs([]string{"--flatten", "bindings", "--filter", gsaIamFilter, "--format", "json"})
+		gsaProjectPolicyOp := gcloud.Run(t, fmt.Sprintf("projects get-iam-policy %s", projectID), gsaIamCommonArgs).Array()
+		gsaListRoles := testutils.GetResultFieldStrSlice(gsaProjectPolicyOp, "bindings.role")
+		expectedGsaRoles := []string{"roles/aiplatform.user", "roles/cloudtrace.agent"}
+		assert.Subset(gsaListRoles, expectedGsaRoles, fmt.Sprintf("Service account %s should have aiplatform.user and cloudtrace.agent roles on project", gkeAgentEmail))
 
-		cluster_service_accounts := standaloneSingleProjT.GetJsonOutput("cluster_service_accounts").Array()
-
-		assert.Greater(len(cluster_service_accounts), 0, "The terraform output must contain more than 0 service accounts.")
-		for _, sa := range cluster_service_accounts {
-			assert.True(strings.Contains(sa.String(), ".gserviceaccount.com"), "The cluster SA value must be a Google Service Account")
-		}
-
-		gkeMeshCommand := fmt.Sprintf("beta container fleet mesh describe --project %s --format='json(membershipStates)'", projectID)
-
-		membershipNamesProjectNumber := []string{}
-		for _, region := range clusterRegions {
-			membershipName := fmt.Sprintf("projects/%[1]s/locations/%[2]s/memberships/cluster-%[2]s-%[3]s", clusterProjectNumber, region, envName)
-			membershipNamesProjectNumber = append(membershipNamesProjectNumber, membershipName)
-		}
-		pollMeshProvisioning := func(cmd string) func() (bool, error) {
-			return func() (bool, error) {
-				retry := false
-				result := gcloud.Runf(t, cmd)
-				if len(result.Array()) < 1 {
-					return true, nil
-				}
-				for _, memberShipName := range membershipNamesProjectNumber {
-					dataPlaneManagement := result.Get("membershipStates").Get(memberShipName).Get("servicemesh.dataPlaneManagement.state").String()
-					controlPlaneManagement := result.Get("membershipStates").Get(memberShipName).Get("servicemesh.controlPlaneManagement.state").String()
-					retryStatus := []string{"PROVISIONING", "STALLED"}
-					if slices.Contains(retryStatus, dataPlaneManagement) || slices.Contains(retryStatus, controlPlaneManagement) {
-						retry = true
-					} else if dataPlaneManagement != "ACTIVE" || controlPlaneManagement != "ACTIVE" {
-						generalState := result.Get("membershipStates").Get(memberShipName).Get("state.code").String()
-						generalDescription := result.Get("membershipStates").Get(memberShipName).Get("state.description").String()
-						return false, fmt.Errorf("Service mesh provisioning failed for %s: status='%s' description='%s'", memberShipName, generalState, generalDescription)
-					}
-				}
-				return retry, nil
-			}
-		}
-		if envName != "development" {
-			utils.Poll(t, pollMeshProvisioning(gkeMeshCommand), 10, 60*time.Second)
-		}
+		// Workload Identity User binding on GSA
+		gsaIamPolicyOp := gcloud.Runf(t, "iam service-accounts get-iam-policy %s --project %s", gkeAgentEmail, projectID)
+		expectedWiMember := fmt.Sprintf("serviceAccount:%s.svc.id.goog[mortgage-agent-%s/mortgage-agent-ksa]", projectID, envName)
+		assert.Contains(gsaIamPolicyOp.String(), expectedWiMember, fmt.Sprintf("GSA %s should have Workload Identity binding for %s", gkeAgentEmail, expectedWiMember))
 	})
 
 	standaloneSingleProjT.DefineTeardown(func(assert *assert.Assertions) {
