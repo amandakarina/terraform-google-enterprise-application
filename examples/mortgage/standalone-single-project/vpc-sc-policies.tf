@@ -14,6 +14,13 @@
  * limitations under the License.
  */
 
+locals {
+  mcp_service_accounts = [
+    "serviceAccount:mcp-legacy-dms@${data.google_project.project.project_id}.iam.gserviceaccount.com",
+    "serviceAccount:mcp-corporate-email@${data.google_project.project.project_id}.iam.gserviceaccount.com",
+    "serviceAccount:mcp-income-verification@${data.google_project.project.project_id}.iam.gserviceaccount.com",
+  ]
+}
 
 data "google_project" "workerpool_network_project" {
   project_id = module.standalone_harness.workerpool_network_project_id
@@ -98,6 +105,36 @@ resource "google_access_context_manager_service_perimeter_ingress_policy" "ingre
   }
 }
 
+resource "google_access_context_manager_service_perimeter_ingress_policy" "mcp_cloud_run_telemetry" {
+  count     = var.service_perimeter_mode == "ENFORCE" && var.service_perimeter_name != null ? 1 : 0
+  perimeter = var.service_perimeter_name
+  title     = "mortgage-mcp-cloudrun-to-${data.google_project.project.project_id}"
+
+  ingress_from {
+    identities = local.mcp_service_accounts
+    sources {
+      access_level = "*"
+    }
+  }
+
+  ingress_to {
+    resources = [
+      "projects/${data.google_project.project.number}",
+    ]
+
+    operations {
+      service_name = "telemetry.googleapis.com"
+      method_selectors {
+        method = "*"
+      }
+    }
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
 resource "google_access_context_manager_service_perimeter_dry_run_ingress_policy" "ingress_policy" {
   count     = var.service_perimeter_name != null ? 1 : 0
   perimeter = var.service_perimeter_name
@@ -120,6 +157,36 @@ resource "google_access_context_manager_service_perimeter_dry_run_ingress_policy
       }
     }
   }
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "google_access_context_manager_service_perimeter_dry_run_ingress_policy" "mcp_cloud_run_telemetry" {
+  count     = var.service_perimeter_name != null ? 1 : 0
+  perimeter = var.service_perimeter_name
+  title     = "mortgage-mcp-cloudrun-to-${data.google_project.project.project_id}"
+
+  ingress_from {
+    identities = local.mcp_service_accounts
+    sources {
+      access_level = "*"
+    }
+  }
+
+  ingress_to {
+    resources = [
+      "projects/${data.google_project.project.number}",
+    ]
+
+    operations {
+      service_name = "telemetry.googleapis.com"
+      method_selectors {
+        method = "*"
+      }
+    }
+  }
+
   lifecycle {
     create_before_destroy = true
   }
