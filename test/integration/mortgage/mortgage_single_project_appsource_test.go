@@ -27,6 +27,7 @@ import (
 	"github.com/GoogleCloudPlatform/cloud-foundation-toolkit/infra/blueprint-test/pkg/utils"
 	"github.com/GoogleCloudPlatform/terraform-google-enterprise-application/test/integration/testutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/tidwall/gjson"
 
 	cp "github.com/otiai10/copy"
 )
@@ -35,9 +36,14 @@ func TestSingleProjectSourceMortgage(t *testing.T) {
 
 	env_cluster_membership_ids := make(map[string]map[string][]string, 0)
 	// initialize Terraform test from the Blueprints test framework
+	setupOutput := tft.NewTFBlueprintTest(t, tft.WithTFDir("../../setup"))
 	gitLabPath := "../../setup/harness/gitlab"
+
+	cicdProjectID := setupOutput.GetJsonOutput("harness_project_ids").Get("mortgage").String()
+
 	gitLab := tft.NewTFBlueprintTest(t,
 		tft.WithTFDir(gitLabPath))
+
 	projectID := gitLab.GetStringOutput("gitlab_project_id")
 	gitUrl := gitLab.GetStringOutput("gitlab_url")
 	gitlabPersonalTokenSecretName := gitLab.GetStringOutput("gitlab_pat_secret_name")
@@ -64,7 +70,7 @@ func TestSingleProjectSourceMortgage(t *testing.T) {
 	deployTargets := standaloneSingleProj.GetJsonOutput("clouddeploy_targets_names")
 
 	region := standaloneSingleProj.GetJsonOutput("cluster_regions").Array()[0].String()
-	repoName := fmt.Sprintf("eab-%s-%s", appName, serviceName)
+	repoName := fmt.Sprintf("eab-%s", serviceName)
 	appSourcePath := fmt.Sprintf("../../../examples/%s/6-appsource", appName)
 
 	servicePath := fmt.Sprintf("%s/%s", appSourcePath, serviceName)
@@ -90,7 +96,6 @@ func TestSingleProjectSourceMortgage(t *testing.T) {
 
 		appsource.DefineVerify(func(assert *assert.Assertions) {
 			mcpDiscoveredJSON := standaloneSingleProj.GetStringOutput("mcp_discovered_servers_json")
-
 			gitApp := git.NewCmdConfig(t, git.WithDir(tmpDirApp))
 			gitAppRun := func(args ...string) {
 				_, err := gitApp.RunCmdE(args...)
@@ -107,10 +112,15 @@ func TestSingleProjectSourceMortgage(t *testing.T) {
 			gitAppRun("checkout", "-b", "main")
 			gitAppRun("remote", "add", "google", appRepo)
 
-			// copy contents from 6-appsource to the cloned repository
 			err := cp.Copy(appSourcePath, tmpDirApp)
 			if err != nil {
 				t.Fatal(err)
+			}
+
+			// remove the mcp-cloud-run directory so it is not committed
+			mcpCloudRunPath := filepath.Join(tmpDirApp, "mcp-cloud-run")
+			if err := os.RemoveAll(mcpCloudRunPath); err != nil {
+				t.Fatalf("Failed to remove %s: %v", mcpCloudRunPath, err)
 			}
 
 			configMapPath := filepath.Join(tmpDirApp, "k8s", "overlays", envName, "config-map.yaml")
@@ -132,8 +142,8 @@ func TestSingleProjectSourceMortgage(t *testing.T) {
 			gitAppRun("push", "google", "main", "--force")
 
 			lastCommit := gitApp.GetLatestCommit()
-			// filter builds triggered based on pushed commit sha
-			buildListCmd := fmt.Sprintf("builds list --region=%s --filter substitutions.COMMIT_SHA='%s' --project %s", region, lastCommit, projectID)
+			// filter builds triggered based on pushed commit sha (builds run in the CI/CD project)
+			buildListCmd := fmt.Sprintf("builds list --region=%s --filter substitutions.COMMIT_SHA='%s' --project %s", region, lastCommit, cicdProjectID)
 			onRetryBuild := func() string {
 				t.Logf("Force push again to try trigger build for commit %s", lastCommit)
 				gitAppRun("push", "google", "main", "--force")
@@ -142,10 +152,23 @@ func TestSingleProjectSourceMortgage(t *testing.T) {
 			utils.Poll(t, testutils.PollCloudBuild(t, buildListCmd, region, serviceName, onRetryBuild), 40, 60*time.Second)
 
 			releaseName := ""
-			releaseListCmd := fmt.Sprintf("deploy releases list --project=%s --delivery-pipeline=%s --region=%s --filter=name:%s", projectID, serviceName, region, lastCommit[0:7])
+			releaseListCmd := fmt.Sprintf("deploy releases list --project=%s --delivery-pipeline=%s --region=%s --filter=name:%s", cicdProjectID, serviceName, region, lastCommit[0:7])
 			utils.Poll(t, testutils.PollCloudDeployRelease(t, releaseListCmd, &releaseName), 60, 60*time.Second)
 
-			testutils.PromoteAndPollCloudDeploy(t, projectID, serviceName, region, releaseName, deployTargets.Array())
+			var targets []gjson.Result
+			if deployTargets.IsArray() {
+				for _, item := range deployTargets.Array() {
+					targets = append(targets, item.Get(repoName).Array()...)
+				}
+			} else {
+				targets = deployTargets.Get(repoName).Array()
+			}
+			if len(targets) == 0 {
+				t.Fatalf("no Cloud Deploy targets found for %s in clouddeploy_targets_names: %s", repoName, deployTargets.Raw)
+			}
+			t.Logf("Cloud Deploy targets for %s: %v", repoName, targets)
+
+			testutils.PromoteAndPollCloudDeploy(t, cicdProjectID, serviceName, region, releaseName, targets)
 		})
 		appsource.Test()
 	})

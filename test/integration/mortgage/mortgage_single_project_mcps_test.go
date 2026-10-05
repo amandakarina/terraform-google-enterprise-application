@@ -37,7 +37,7 @@ func TestMortgageMCPs(t *testing.T) {
 	regions := testutils.GetBptOutputStrSlice(standalone, "cluster_regions")
 	region := regions[0]
 
-	mcpSourcePath, err := filepath.Abs("../../../examples/mortgage/mcp-cloud-run")
+	mcpSourcePath, err := filepath.Abs("../../../examples/mortgage/6-appsource/mcp-cloud-run")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,39 +48,40 @@ func TestMortgageMCPs(t *testing.T) {
 	)
 
 	mcpServers.DefineVerify(func(assert *assert.Assertions) {
+		t.Logf("Building all MCP images with Cloud Build and Skaffold...")
+		cloudBuildConfig := filepath.Join(mcpSourcePath, "cloudbuild.yaml")
+		buildCmd := fmt.Sprintf("builds submit %s --config=%s --substitutions=_REGION=%s --project=%s",
+			mcpSourcePath,
+			cloudBuildConfig,
+			region,
+			projectID,
+		)
+		gcloud.RunCmd(t, buildCmd)
+
 		mcpServices := []struct {
 			ServiceName string
-			SourceDir   string
 			ImageName   string
 			SAName      string
 		}{
 			{
 				ServiceName: "legacy-dms",
-				SourceDir:   "src/legacy-dms",
 				ImageName:   "legacy-dms",
 				SAName:      "mcp-legacy-dms",
 			},
 			{
 				ServiceName: "corporate-email",
-				SourceDir:   "src/corporate-email",
 				ImageName:   "corporate-email",
 				SAName:      "mcp-corporate-email",
 			},
 			{
 				ServiceName: "income-verification",
-				SourceDir:   "src/income-verification-api",
 				ImageName:   "income-verification-api",
 				SAName:      "mcp-income-verification",
 			},
 		}
 
 		for _, svc := range mcpServices {
-			imageTag := fmt.Sprintf("%s-docker.pkg.dev/%s/mcp-docker/%s", region, projectID, svc.ImageName)
-			srcPath := filepath.Join(mcpSourcePath, svc.SourceDir)
-
-			t.Logf("Building image for MCP service %s...", svc.ServiceName)
-			buildCmd := fmt.Sprintf("builds submit %s --tag=%s --project=%s", srcPath, imageTag, projectID)
-			gcloud.RunCmd(t, buildCmd)
+			imageTag := fmt.Sprintf("%s-docker.pkg.dev/%s/mcp-docker/%s:latest", region, projectID, svc.ImageName)
 
 			t.Logf("Updating Cloud Run service image for %s...", svc.ServiceName)
 			deployCmd := fmt.Sprintf("run deploy %s "+
