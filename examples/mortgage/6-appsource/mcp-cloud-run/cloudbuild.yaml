@@ -18,7 +18,7 @@ steps:
     id: 'initialize-qemu'
 
   - name: 'gcr.io/cloud-builders/docker:20.10.24'
-    args: ['buildx', 'create', '--name', 'multiarch', "--use"]
+    args: ['buildx', 'create', '--name', 'multiarch', '--use']
     id: 'create-builder-and-use'
 
   - name: 'gcr.io/cloud-builders/docker:20.10.24'
@@ -26,51 +26,42 @@ steps:
     id: 'show-target-build-platforms'
 
   - name: 'gcr.io/cloud-builders/docker:20.10.24'
-    id: 'build-multi-arch-image'
-    entrypoint: sh
-    args:
-      - "-c"
-      - |
-        if [ -f skaffold.yaml.tmpl ]; then
-          sed -e "s|\$${PROJECT_ID}|$PROJECT_ID|g" \
-              -e "s|\$${REGION}|$_REGION|g" \
-              skaffold.yaml.tmpl > skaffold.yaml
-        fi
+    id: 'build-legacy-dms'
+    args: [
+      'buildx', 'build',
+      '--platform', 'linux/amd64',
+      '-t', '$_CONTAINER_REGISTRY/legacy-dms:latest',
+      '--push',
+      'src/legacy-dms'
+    ]
 
-        for f in cloud_run/*.yaml.tmpl; do
-          if [ -f "$$f" ]; then
-            sed -e "s|\$${PROJECT_ID}|$PROJECT_ID|g" \
-                -e "s|\$${REGION}|$_REGION|g" \
-                -e "s|\$${MCP_INGRESS}|$_MCP_INGRESS|g" \
-                "$$f" > "$${f%.tmpl}"
-          fi
-        done
+  - name: 'gcr.io/cloud-builders/docker:20.10.24'
+    id: 'build-income-verification-api'
+    args: [
+      'buildx', 'build',
+      '--platform', 'linux/amd64',
+      '-t', '$_CONTAINER_REGISTRY/income-verification-api:latest',
+      '--push',
+      'src/income-verification-api'
+    ]
 
-        curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64 && \
-        install skaffold /usr/local/bin/
-
-        skaffold build \
-          --file-output=/workspace/artifacts.json \
-          --default-repo=$_CONTAINER_REGISTRY \
-          --cache-artifacts=false \
-          --push=true
-
-        for img in legacy-dms income-verification-api corporate-email; do
-          img_base="$_REGION-docker.pkg.dev/$PROJECT_ID/mcp-docker/$img"
-          built_tag=$$(grep -o "$$img_base:[^\" ]*" /workspace/artifacts.json | head -n 1)
-          if [ -n "$$built_tag" ]; then
-            docker tag "$$built_tag" "$$img_base:latest"
-            docker push "$$img_base:latest"
-          fi
-        done
+  - name: 'gcr.io/cloud-builders/docker:20.10.24'
+    id: 'build-corporate-email'
+    args: [
+      'buildx', 'build',
+      '--platform', 'linux/amd64',
+      '-t', '$_CONTAINER_REGISTRY/corporate-email:latest',
+      '--push',
+      'src/corporate-email'
+    ]
 
 substitutions:
   _CONTAINER_REGISTRY: ''
-  _REGION: 'us-west4'
-  _MCP_INGRESS: 'all'
+  _BUCKET_NAME: ''
+
+logsBucket: 'gs://$_BUCKET_NAME/logs'
 
 options:
-  logging: CLOUD_LOGGING_ONLY
+  logging: GCS_ONLY
   env:
     - 'DOCKER_CLI_EXPERIMENTAL=enabled'
-    - 'DOCKER_API_VERSION=1.41'

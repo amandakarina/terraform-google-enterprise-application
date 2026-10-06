@@ -36,6 +36,8 @@ func TestMortgageMCPs(t *testing.T) {
 	projectID := standalone.GetStringOutput("cluster_project_id")
 	regions := testutils.GetBptOutputStrSlice(standalone, "cluster_regions")
 	region := regions[0]
+	containerRegistry := standalone.GetStringOutput("artifact_registry_url")
+	cloudBuildBucket := standalone.GetStringOutput("cloudbuild_bucket")
 
 	mcpSourcePath, err := filepath.Abs("../../../examples/mortgage/6-appsource/mcp-cloud-run")
 	if err != nil {
@@ -48,12 +50,14 @@ func TestMortgageMCPs(t *testing.T) {
 	)
 
 	mcpServers.DefineVerify(func(assert *assert.Assertions) {
-		t.Logf("Building all MCP images with Cloud Build and Skaffold...")
+		t.Logf("Building all MCP images with Cloud Build...")
 		cloudBuildConfig := filepath.Join(mcpSourcePath, "cloudbuild.yaml")
-		buildCmd := fmt.Sprintf("builds submit %s --config=%s --substitutions=_REGION=%s --project=%s",
+		buildCmd := fmt.Sprintf("builds submit %s --config=%s --substitutions=_CONTAINER_REGISTRY=%s,_BUCKET_NAME=%s --gcs-source-staging-dir=gs://%s/source --project=%s",
 			mcpSourcePath,
 			cloudBuildConfig,
-			region,
+			containerRegistry,
+			cloudBuildBucket,
+			cloudBuildBucket,
 			projectID,
 		)
 		gcloud.RunCmd(t, buildCmd)
@@ -81,7 +85,7 @@ func TestMortgageMCPs(t *testing.T) {
 		}
 
 		for _, svc := range mcpServices {
-			imageTag := fmt.Sprintf("%s-docker.pkg.dev/%s/mcp-docker/%s:latest", region, projectID, svc.ImageName)
+			imageTag := fmt.Sprintf("%s/%s:latest", containerRegistry, svc.ImageName)
 
 			t.Logf("Updating Cloud Run service image for %s...", svc.ServiceName)
 			deployCmd := fmt.Sprintf("run deploy %s "+
