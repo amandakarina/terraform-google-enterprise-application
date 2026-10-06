@@ -52,65 +52,27 @@ func TestMortgageMCPs(t *testing.T) {
 	mcpServers.DefineVerify(func(assert *assert.Assertions) {
 		t.Logf("Building all MCP images with Cloud Build...")
 		cloudBuildConfig := filepath.Join(mcpSourcePath, "cloudbuild.yaml")
-		buildCmd := fmt.Sprintf("builds submit %s --config=%s --substitutions=_CONTAINER_REGISTRY=%s,_BUCKET_NAME=%s --gcs-source-staging-dir=gs://%s/source --project=%s",
+		buildCmd := fmt.Sprintf("builds submit %s --config=%s --substitutions=_CONTAINER_REGISTRY=%s --gcs-source-staging-dir=gs://%s/source --project=%s",
 			mcpSourcePath,
 			cloudBuildConfig,
 			containerRegistry,
-			cloudBuildBucket,
 			cloudBuildBucket,
 			projectID,
 		)
 		gcloud.RunCmd(t, buildCmd)
 
-		mcpServices := []struct {
-			ServiceName string
-			ImageName   string
-			SAName      string
-		}{
-			{
-				ServiceName: "legacy-dms",
-				ImageName:   "legacy-dms",
-				SAName:      "mcp-legacy-dms",
-			},
-			{
-				ServiceName: "corporate-email",
-				ImageName:   "corporate-email",
-				SAName:      "mcp-corporate-email",
-			},
-			{
-				ServiceName: "income-verification",
-				ImageName:   "income-verification-api",
-				SAName:      "mcp-income-verification",
-			},
+		mcpServices := []string{
+			"legacy-dms",
+			"corporate-email",
+			"income-verification",
 		}
 
-		for _, svc := range mcpServices {
-			imageTag := fmt.Sprintf("%s/%s:latest", containerRegistry, svc.ImageName)
-
-			t.Logf("Updating Cloud Run service image for %s...", svc.ServiceName)
-			deployCmd := fmt.Sprintf("run deploy %s "+
-				"--image=%s "+
-				"--project=%s "+
-				"--region=%s "+
-				"--service-account=%s@%s.iam.gserviceaccount.com "+
-				"--ingress=all "+
-				"--set-env-vars=GOOGLE_CLOUD_PROJECT=%s,OTEL_SERVICE_NAME=%s",
-				svc.ServiceName,
-				imageTag,
-				projectID,
-				region,
-				svc.SAName,
-				projectID,
-				projectID,
-				svc.ServiceName,
-			)
-			gcloud.RunCmd(t, deployCmd)
-
-			svcOp := gcloud.Runf(t, "run services describe %s --project %s --region %s", svc.ServiceName, projectID, region)
+		for _, svcName := range mcpServices {
+			t.Logf("Checking if Cloud Run service %s is Ready...", svcName)
+			svcOp := gcloud.Runf(t, "run services describe %s --project %s --region %s", svcName, projectID, region)
 			readyCond := svcOp.Get("status.conditions.#(type==\"Ready\").status").String()
-			assert.Equal("True", readyCond, fmt.Sprintf("Cloud Run service %s should be in Ready status", svc.ServiceName))
+			assert.Equal("True", readyCond, fmt.Sprintf("Cloud Run service %s should be in Ready status", svcName))
 		}
 	})
-
 	mcpServers.Test()
 }

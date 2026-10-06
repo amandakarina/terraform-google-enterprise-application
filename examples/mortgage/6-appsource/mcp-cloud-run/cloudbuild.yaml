@@ -57,11 +57,8 @@ steps:
 
 substitutions:
   _CONTAINER_REGISTRY: ''
-  _BUCKET_NAME: ''
-
-logsBucket: 'gs://$_BUCKET_NAME/logs'
 
 options:
-  logging: GCS_ONLY
+  logging: CLOUD_LOGGING_ONLY
   env:
     - 'DOCKER_CLI_EXPERIMENTAL=enabled'
