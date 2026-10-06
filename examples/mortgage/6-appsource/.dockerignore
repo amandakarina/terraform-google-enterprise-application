@@ -5,6 +5,5 @@ __pycache__
 *.pyo
 *.pyd
 .pytest_cache
-mortgage_agent
 k8s
 mcp-cloud-run
