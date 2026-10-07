@@ -237,7 +237,7 @@ To proceed with Gitlab as your git provider you will need:
 
 - An authenticated Gitlab account. The steps in this documentation assumes you have a configured SSH key for cloning and modifying repositories.
 - A **private** GitLab repository for each one of the repositories below:
-  - LLM Model (`eab-mortgage-agent`)
+  - Mortgage Agent (`eab-mortgage-agent`)
 
   > Note: Default name for the repository is: `eab-mortgage-agent`; If you choose other name for your repository make sure you update `terraform.tfvars` the repository names under `cloudbuildv2_repository_config` variable.
 
