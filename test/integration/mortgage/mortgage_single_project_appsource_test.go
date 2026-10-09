@@ -107,7 +107,7 @@ func TestSingleProjectSourceMortgage(t *testing.T) {
 			gitAppRun("remote", "add", "google", appRepo)
 
 			// copy contents from 6-appsource to the cloned repository
-			err := cp.Copy(appSourcePath, tmpDirApp)
+			err := cp.Copy(servicePath, tmpDirApp)
 			if err != nil {
 				t.Fatal(err)
 			}
