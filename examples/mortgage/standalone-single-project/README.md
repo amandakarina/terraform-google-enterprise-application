@@ -339,23 +339,40 @@ the steps below assume that you are checked out on the same level as `terraform-
 
 1. Run `terraform apply`.
 
-1. Deploy MCP Images
+1. After the apply finishes, export the following environment variables from the Terraform outputs:
 
    ```bash
-   cd /terraform-google-enterprise-application/examples/mortgage/mcp-cloud-run
-
-   export PROJECT_ID=${PROJECT_ID}
-   export REGION=${REGION}
-   export BUCKET_NAME=${BUCKET_NAME}
-   export MCP_INGRESS=all
-
-   envsubst '${PROJECT_ID} ${REGION} ${BUCKET_NAME}' < skaffold.yaml.tmpl > skaffold.yaml
-   for f in cloud_run/*.yaml.tmpl; do
-     envsubst '${PROJECT_ID} ${REGION} ${MCP_INGRESS}' < "$f" > "${f%.tmpl}"
-   done
-
-   skaffold run
+   export PROJECT_ID=$(terraform output -raw cluster_project_id)
+   export REGION=$(terraform output -json cluster_regions | jq -r '.[0]')
+   export CLOUDBUILD_BUCKET=$(terraform output -raw cloudbuild_bucket)
+   export ARTIFACT_REGISTRY_URL=$(terraform output -raw artifact_registry_url)
+   export ENV_NAME=$(terraform output -raw env)
+   export MCP_JSON=$(terraform output -raw mcp_discovered_servers_json)
    ```
+
+### Deploy the MCP Images
+
+The Cloud Build pipeline builds the MCP server images, pushes them to Artifact Registry, and updates the Cloud Run services with the new images.
+
+1. Enter the `mcp-cloud-run` folder:
+
+   ```bash
+   cd terraform-google-enterprise-application/examples/mortgage/mcp-cloud-run
+   ```
+
+1. Run the Cloud Build submission:
+
+   ```bash
+   gcloud builds submit . \
+     --config=cloudbuild.yaml \
+     --project=$PROJECT_ID \
+     --region=$REGION \
+     --gcs-source-staging-dir=gs://$CLOUDBUILD_BUCKET/source \
+     --gcs-log-dir=gs://$CLOUDBUILD_BUCKET/logs \
+     --substitutions=_CONTAINER_REGISTRY=$ARTIFACT_REGISTRY_URL,_REGION=$REGION
+   ```
+
+### Deploy the Mortgage Agent
 
 1. Clone the source repository
 
@@ -377,51 +394,22 @@ the steps below assume that you are checked out on the same level as `terraform-
     git clone https://gitlab.com/your-group/eab-mortgage-agent.git
     ```
 
-1. Copy the contents of this directory to the repository:
+1. Copy the contents of this directory into `eab-mortgage-agent` the repository:
 
    ```bash
-   cp -r terraform-google-enterprise-application/examples/mortgage/6-appsource/* eab-mortgage-agent
+   cp -r terraform-google-enterprise-application/examples/mortgage/6-appsource/mortgage-agent/* eab-mortgage-agent
    ```
 
-1. Create the `mcp-discovered-servers.json` file with the Cloud Run URLs
+1. Set the discovered MCP servers in the ConfigMap:
 
    ```bash
-   cd eab-mortgage-agent/k8s/overlays/development/
-
-   URL_LEGACY=$(gcloud run services describe legacy-dms --project="$PROJECT_ID" --region="$REGION" --format='value(status.url)' 2>/dev/null)
-   URL_EMAIL=$(gcloud run services describe corporate-email --project="$PROJECT_ID" --region="$REGION" --format='value(status.url)' 2>/dev/null)
-   URL_INCOME=$(gcloud run services describe income-verification --project="$PROJECT_ID" --region="$REGION" --format='value(status.url)' 2>/dev/null)
-
-   cat <<EOF | sed -e "s|__URL_LEGACY__|${URL_LEGACY}/mcp|g" \
-                   -e "s|__URL_EMAIL__|${URL_EMAIL}/mcp|g" \
-                   -e "s|__URL_INCOME__|${URL_INCOME}/mcp|g" > mcp_config.json
-   [
-       {
-         "name": "legacy-dms",
-         "resolved_url": "__URL_LEGACY__",
-         "tool_name_prefix": "legacy_dms",
-         "tools": ["search_documents", "get_document"]
-       },
-       {
-         "name": "corporate-email",
-         "resolved_url": "__URL_EMAIL__",
-         "tool_name_prefix": "corporate_email",
-         "tools": ["send_email", "read_email"]
-       },
-       {
-         "name": "income-verification",
-         "resolved_url": "__URL_INCOME__",
-         "tool_name_prefix": "income_verification",
-         "tools": ["verify_applicant"]
-       }
-   ]
-   EOF
+    cd eab-mortgage-agent
+    yq -i '.data.MCP_DISCOVERED_SERVERS_JSON = strenv(MCP_JSON)' k8s/overlays/$ENV_NAME/config-map.yaml
    ```
 
 1. Commit changes
 
    ```bash
-   cd eab-mortgage-agent
    git checkout -b main
    git add .
    git commit -m "Add source code to the repository"
