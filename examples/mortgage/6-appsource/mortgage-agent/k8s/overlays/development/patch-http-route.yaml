@@ -19,4 +19,4 @@ metadata:
 spec:
   parentRefs:
     - name: mortgage-agent-gw
-      namespace: mortgage-agent-development
+      namespace: mortgage-development-development
