@@ -339,36 +339,18 @@ def _toolset_from_http_url(
     _attach_invoker_auth(toolset, invoker_sa_email)
     return toolset
 
-def _decode_mcp_servers_env(raw: str) -> str:
-    """Accept MCP_DISCOVERED_SERVERS_JSON as plain JSON or base64-encoded JSON.
-
-    Cloud Deploy passes deploy parameters to Skaffold through `--set`, which is
-    CSV-parsed and cannot carry quotes or commas, so the value is base64-encoded.
-    """
-    raw = raw.strip()
-    if raw.startswith(("[", "{")):
-        return raw
-    try:
-        return base64.b64decode(raw, validate=True).decode("utf-8")
-    except (binascii.Error, UnicodeDecodeError):
-        logger.warning(
-            "MCP_DISCOVERED_SERVERS_JSON is neither JSON nor valid base64; ignoring."
-        )
-        return ""
 
 def _fallback_server_descriptors() -> list[dict[str, Any]]:
     raw = os.environ.get("MCP_DISCOVERED_SERVERS_JSON")
     if raw:
-        decoded = _decode_mcp_servers_env(raw)
-        if decoded:
-            try:
-                parsed = json.loads(decoded)
-                if isinstance(parsed, list) and parsed:
-                    return parsed
-            except json.JSONDecodeError:
-                logger.warning(
-                    "MCP_DISCOVERED_SERVERS_JSON is not valid JSON; ignoring."
-                )
+        try:
+            parsed = json.loads(raw)
+            if isinstance(parsed, list) and parsed:
+                return parsed
+        except json.JSONDecodeError:
+            logger.warning(
+                "MCP_DISCOVERED_SERVERS_JSON is not valid JSON; ignoring."
+            )
     domain = (
         (os.environ.get("MCP_INTERNAL_DNS_DOMAIN") or "").strip().rstrip(".")
     )
