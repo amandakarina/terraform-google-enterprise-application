@@ -357,7 +357,7 @@ The Cloud Build pipeline builds the MCP server images, pushes them to Artifact R
 1. Enter the `mcp-cloud-run` folder:
 
    ```bash
-   cd terraform-google-enterprise-application/examples/mortgage/mcp-cloud-run
+   cd terraform-google-enterprise-application/examples/mortgage/6-appsource/mcp-cloud-run
    ```
 
 1. Run the Cloud Build submission:
