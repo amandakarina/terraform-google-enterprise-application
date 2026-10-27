@@ -20,6 +20,16 @@ variable "project_id" {
   default     = null
 }
 
+variable "organization_id" {
+  type        = string
+  description = "Organization ID used to build the Agent Identity trust domain. When null, the project's org_id is used when available; otherwise the project-scoped trust domain is used."
+  default     = null
+  validation {
+    condition     = var.organization_id != ""
+    error_message = "organization_id cannot be empty, only null or a valid value."
+  }
+}
+
 variable "region" {
   type        = string
   description = "Google Cloud region for deployments"
@@ -229,12 +239,6 @@ variable "ncc_config" {
   }
 }
 
-variable "model_id" {
-  description = "The Gemini model ID to be used by the mortgage agent."
-  type        = string
-  default     = "gemini-3.1-flash-lite"
-}
-
 // MCP Variables
 variable "artifact_registry_id" {
   description = "The Artifact Registry repository ID"
@@ -249,7 +253,7 @@ variable "mcp_placeholder_image" {
 }
 
 variable "mcp_services" {
-  description = "Map of MCP service name to deployment configuration. The map key becomes the Cloud Run service name."
+  description = "Map of MCP service name to deployment configuration. The map key becomes the Cloud Run service name AND the URL-mask token (e.g. legacy-dms.<mcp_internal_dns_zone.domain> -> Cloud Run service 'legacy-dms')."
   type = map(object({
     account_id         = string
     image              = optional(string)
@@ -265,3 +269,5 @@ variable "mcp_services" {
     "income-verification" = { account_id = "mcp-income-verification" }
   }
 }
+
+
