@@ -239,6 +239,12 @@ variable "ncc_config" {
   }
 }
 
+variable "model_id" {
+  description = "The Gemini model ID to be used by the mortgage agent."
+  type        = string
+  default     = "gemini-3.1-flash-lite"
+}
+
 // MCP Variables
 variable "artifact_registry_id" {
   description = "The Artifact Registry repository ID"
