@@ -58,6 +58,7 @@ func TestStandaloneSingleProjectMortgage(t *testing.T) {
 
 	vars := map[string]interface{}{
 		"project_id":             projectID,
+		"organization_id":        setupOutput.GetStringOutput("org_id"),
 		"service_perimeter_mode": service_perimeter_mode,
 		"service_perimeter_name": service_perimeter_name,
 		"teams":                  setupOutput.GetJsonOutput("teams").String(),
