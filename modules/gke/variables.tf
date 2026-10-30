@@ -150,7 +150,7 @@ variable "kubernetes_version" {
   type        = string
   default     = "latest"
 }
-  
+
 variable "network_tags" {
   description = <<-EOF
   Network tags applied to all cluster nodes (static, NAP, Autopilot).
